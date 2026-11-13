@@ -257,6 +257,7 @@ object Pulse {
   @Synchronized
   fun pendingReminders(context: Context): JSONArray = try { JSONArray(prefs(context).getString("reminders", "[]")) } catch (e: Exception) { JSONArray() }
 
+  @Synchronized
   fun addReminder(context: Context, id: Long, at: Long, app: String, title: String, text: String) {
     val list = pendingReminders(context)
     val next = JSONArray()
@@ -266,6 +267,7 @@ object Pulse {
     scheduleReminder(context, id, at, app, title, text)
   }
 
+  @Synchronized
   fun removeReminder(context: Context, id: Long) {
     val list = pendingReminders(context)
     val next = JSONArray()

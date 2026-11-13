@@ -103,7 +103,13 @@ export default function Inbox() {
     Listener.stats(start.getTime(), null).then(setToday).catch(() => {});
   }, []);
 
-  useFocusEffect(refreshSummary);
+  // Returning from a notification (starred, deleted) or a rule change shows the current list.
+  useFocusEffect(
+    useCallback(() => {
+      refreshSummary();
+      void load(false, null);
+    }, [refreshSummary, load]),
+  );
 
   useEffect(() => {
     const sub = Listener.addListener('onNotification', (row) => {

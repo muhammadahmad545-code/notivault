@@ -4,6 +4,14 @@ A private, searchable inbox for every notification on your Android phone, with r
 
 **[Download the latest APK](https://github.com/muhammadahmad545-code/pulse/releases/latest)**
 
+## What's new in 1.1
+
+- **Redesigned** with tab navigation (Inbox, Digest, Insights, Settings), live counts for today, day-grouped history and a first-run introduction.
+- **Starred notifications** are kept forever, whatever the retention setting. **Remind me later** brings any notification back at a time you pick, and survives reboots.
+- **App pages:** per-app notifications per day, peak hour, recent notifications and one-tap Quiet / Digest / Priority rules. **Rule templates** for urgent messages, sales and social noise.
+- **Chat apps are read message by message**, so a group chat shows who said what and search finds the actual words.
+- **Fixes:** listener work moved off the main thread; quieted notifications stay quiet on re-post; leftover group summaries removed; priority alerts update in place; codes are hidden on the lock screen; code detection picks the right number and ignores amounts; search handles punctuation; no skipped rows when paging.
+
 ## What it does
 
 - **Full history.** Every notification is kept, searchable by word prefix across app, title and text (“inv pay” finds “Invoice payment due”).
