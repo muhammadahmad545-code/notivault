@@ -39,3 +39,10 @@ export function validateRule(rule: PulseRule): string | null {
   if (rule.apps.length === 0 && rule.keywords.length === 0) return 'Pick at least one app or keyword, or the rule would catch every notification.';
   return null;
 }
+
+/** Keyword-only starting points; app-specific rules are easier to make from a notification or app page. */
+export const TEMPLATES: Omit<PulseRule, 'id' | 'enabled'>[] = [
+  { name: 'Urgent always gets through', apps: [], keywords: ['urgent', 'emergency', 'asap', 'call me'], action: 'alert' },
+  { name: 'Quiet sales and offers', apps: [], keywords: ['sale', 'offer', '% off', 'discount', 'deal', 'coupon'], action: 'mute' },
+  { name: 'Digest social likes', apps: [], keywords: ['liked your', 'reacted to', 'started following', 'mentioned you'], action: 'digest' },
+];

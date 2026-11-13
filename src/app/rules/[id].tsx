@@ -33,7 +33,7 @@ export default function RuleEditor() {
 
   useEffect(() => {
     Listener.apps().then(setApps).catch(() => {});
-    Listener.query(null, null, null, Date.now() + 1, 300).then(setRecent).catch(() => {});
+    Listener.query(null, null, null, null, null, 300).then(setRecent).catch(() => {});
   }, []);
 
   const candidate = useMemo(() => ({ ...draft, keywords: parseKeywords(keywordText), enabled: true }), [draft, keywordText]);

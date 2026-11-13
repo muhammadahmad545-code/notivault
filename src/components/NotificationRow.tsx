@@ -1,5 +1,5 @@
 import { Chip, Pressable, Text, formatRelativeTime, useTheme } from '@basalt/core';
-import { BellOff, Clock3, KeyRound, PencilLine, Trash } from 'lucide-react-native';
+import { BellOff, Clock3, KeyRound, MessagesSquare, Star, Trash } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
 import type { CapturedNotification } from '../../modules/pulse-listener';
@@ -39,6 +39,7 @@ export function NotificationRow({ item, onPress }: { item: CapturedNotification;
           <Text variant="caption" color="textMuted" numberOfLines={1} style={{ flex: 1 }}>
             {item.app}
           </Text>
+          {item.starred ? <Star size={14} color={colors.warning} fill={colors.warning} /> : null}
           <Text variant="caption" color="textFaint">
             {formatRelativeTime(item.postedAt)}
           </Text>
@@ -56,7 +57,7 @@ export function NotificationRow({ item, onPress }: { item: CapturedNotification;
             {item.code ? <Chip label={item.code} icon={KeyRound} /> : null}
             {item.state === 'muted' ? <Chip label="Quieted" icon={BellOff} /> : null}
             {item.state === 'digest' ? <Chip label="In digest" icon={Clock3} /> : null}
-            {item.versions > 1 ? <Chip label={`${item.versions} versions`} icon={PencilLine} /> : null}
+            {item.versions > 1 ? <Chip label={`${item.versions} in thread`} icon={MessagesSquare} /> : null}
             {deletedByApp ? <Chip label="Removed by app" icon={Trash} tone="warning" /> : null}
           </View>
         ) : null}

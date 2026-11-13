@@ -1,13 +1,13 @@
-import { Button, Card, Chip, Header, ListItem, Pressable, Screen, SectionTitle, SegmentedControl, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
+import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, SegmentedControl, TAB_BAR_SPACE, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
+import { canUseLock } from '@basalt/core/src/lock/LockGate';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { Code, Plus, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react-native';
+import { Code, ListFilter, Plus, RefreshCw, ShieldCheck, Sparkles, Trash2, X } from 'lucide-react-native';
 import React from 'react';
-import { Alert, View } from 'react-native';
-import { TimeField } from '../components/TimeField';
-import { canUseLock } from '../components/LockGate';
-import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, ongoingSetting, retentionSetting, syncNative } from '../lib/settings';
-import { clock } from '../lib/time';
+import { Alert, Platform, View } from 'react-native';
+import { TimeField } from '../../components/TimeField';
+import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, onboardedSetting, ongoingSetting, retentionSetting, syncNative } from '../../lib/settings';
+import { clock } from '../../lib/time';
 
 const THEMES = [
   { value: 'system', label: 'System' },
@@ -48,7 +48,7 @@ export default function Settings() {
   );
 
   const wipe = () =>
-    Alert.alert('Delete all history?', 'Every captured notification is erased from this phone. This cannot be undone.', [
+    Alert.alert('Delete all history?', 'Every captured notification, including starred ones, is erased from this phone. This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete all',
@@ -65,17 +65,27 @@ export default function Settings() {
     ]);
 
   return (
-    <Screen>
-      <Header title="Settings" onBack={() => router.back()} />
+    <Screen aurora bottomSpace={TAB_BAR_SPACE}>
+      <Hero overline="Pulse" title="Settings" />
+
+      <Card onPress={() => router.push('/rules')} variant="raised" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <ListFilter size={22} color={colors.accent} />
+        <View style={{ flex: 1 }}>
+          <Text variant="bodyStrong">Rules</Text>
+          <Text variant="caption" color="textMuted">
+            Quiet, digest or escalate notifications by app and keyword
+          </Text>
+        </View>
+      </Card>
 
       <SectionTitle title="Privacy" />
       <Card style={{ gap: spacing.xs }}>
-        {row('Lock with fingerprint or screen lock', 'Asked when Pulse opens and after 30 seconds away.', lock, async (on) => {
-          if (on && !(await canUseLock())) return toast('Set up a screen lock or fingerprint on this phone first.', 'danger');
+        {row('App lock', 'Fingerprint, face or your screen lock on open and after 30 seconds away. Also hides Pulse in the recent-apps view.', lock, async (on) => {
+          if (on && !(await canUseLock())) return toast('Set up a screen lock on this phone first.', 'danger');
           setLock(on);
         })}
-        {row('One-time code helper', 'Detects verification codes and offers a Copy button.', codes, (v) => apply(() => setCodes(v)))}
-        {row('Include ongoing notifications', 'Music players, downloads and other persistent notices.', ongoing, (v) => apply(() => setOngoing(v)))}
+        {row('One-time code helper', 'Detects verification codes and offers a Copy button. On Android 15, the system may hide codes from apps like Pulse.', codes, (v) => apply(() => setCodes(v)))}
+        {row('Include ongoing notifications', 'Music players, navigation, downloads and other persistent notices.', ongoing, (v) => apply(() => setOngoing(v)))}
         <Text variant="label" color="textMuted" style={{ marginTop: spacing.sm }}>
           Keep history for
         </Text>
@@ -84,22 +94,35 @@ export default function Settings() {
             <Chip key={d} label={d === 0 ? 'Forever' : d === 365 ? '1 year' : `${d} days`} selected={retention === d} onPress={() => apply(() => setRetention(d))} />
           ))}
         </View>
+        <Text variant="caption" color="textFaint">
+          Starred notifications are always kept.
+        </Text>
       </Card>
 
       <SectionTitle title="Digest times" />
       <Card style={{ gap: spacing.md }}>
         {times.map((t, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <View key={`${i}-${t}`} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
             <View style={{ flex: 1 }}>
-              <TimeField label={`Digest ${i + 1}`} minutes={t} onChange={(m) => apply(() => setTimes(times.map((x, j) => (j === i ? m : x)).sort((a, b) => a - b)))} />
+              <TimeField label={`Digest ${i + 1}`} minutes={t} onChange={(m) => apply(() => setTimes([...new Set(times.map((x, j) => (j === i ? m : x)))].sort((a, b) => a - b)))} />
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel={`Remove digest at ${clock(t)}`} hitSlop={12} onPress={() => apply(() => setTimes(times.filter((_, j) => j !== i)))}>
               <X size={18} color={colors.textFaint} />
             </Pressable>
           </View>
         ))}
-        {times.length < 6 ? <Button label="Add a time" icon={Plus} variant="secondary" onPress={() => apply(() => setTimes([...times, 12 * 60].sort((a, b) => a - b)))} /> : null}
-        <Button label="Allow exact timing" variant="ghost" onPress={() => Listener.openExactAlarmSettings()} />
+        {times.length < 6 ? (
+          <Button
+            label="Add a time"
+            icon={Plus}
+            variant="secondary"
+            onPress={() => {
+              const free = [12 * 60, 18 * 60, 21 * 60, 10 * 60, 16 * 60, 7 * 60].find((m) => !times.includes(m)) ?? 12 * 60 + times.length * 5;
+              apply(() => setTimes([...times, free].sort((a, b) => a - b)));
+            }}
+          />
+        ) : null}
+        {Platform.OS === 'android' && Number(Platform.Version) < 33 ? <Button label="Allow exact timing" variant="ghost" onPress={() => Listener.openExactAlarmSettings()} /> : null}
       </Card>
 
       <SectionTitle title="Appearance" />
@@ -119,6 +142,7 @@ export default function Settings() {
 
       <Card style={{ paddingVertical: spacing.xs }}>
         <ListItem title="Private by design" subtitle="Notifications are stored only on this phone, excluded from backups, and never uploaded. The only network request is the update check." icon={ShieldCheck} iconTone="success" />
+        <ListItem title="Show the introduction again" icon={Sparkles} chevron onPress={() => onboardedSetting.set(false)} />
         <ListItem title="Source code" subtitle="MIT licensed on GitHub" icon={Code} chevron onPress={() => void Linking.openURL(REPO_URL)} />
       </Card>
       <Button label="Delete all history" icon={Trash2} variant="danger" onPress={wipe} />

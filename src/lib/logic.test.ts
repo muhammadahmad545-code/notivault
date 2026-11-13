@@ -11,10 +11,20 @@ test('finds codes in common verification messages', () => {
   assert.equal(extractCode('Bank', 'Use 55 019 284 as PIN'), null);
 });
 
-test('ignores messages that are not about codes, and years', () => {
+test('ignores messages that are not about codes', () => {
   assert.equal(extractCode('Ali', 'Meet at 1830 near gate 4'), null);
-  assert.equal(extractCode('Statement', 'Your 2026 statement and verification summary'), null);
   assert.equal(extractCode('Order', 'Order 12345678901 shipped. Track with code below'), null);
+  assert.equal(extractCode('Daraz', 'Deliver to pin code 54000 tomorrow'), null);
+  assert.equal(extractCode('Security', 'Login from new device at 2215'), null);
+  assert.equal(extractCode('Code Club', 'See you at 1730 in room 4412'), null);
+});
+
+test('picks the code, not an amount or a year, when a message has several numbers', () => {
+  assert.equal(extractCode('Bank', 'Your OTP for IBFT of Rs.25000 is 839201. Valid for 5 minutes.'), '839201');
+  assert.equal(extractCode('Bank', 'Amount 45000 debited. Verification code 7720'), '7720');
+  assert.equal(extractCode('Portal', 'Your 2026 code is 4410'), '4410');
+  assert.equal(extractCode('Portal', 'Your verification code is 2019'), '2019');
+  assert.equal(extractCode('Your OTP', 'Use 551902 to continue'), '551902');
 });
 
 const rule = (over: Partial<PulseRule>): PulseRule => ({ id: 'r', name: 'R', enabled: true, apps: [], keywords: [], action: 'mute', ...over });

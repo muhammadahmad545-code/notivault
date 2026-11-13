@@ -43,6 +43,23 @@ class DigestReceiver : BroadcastReceiver() {
 
 class PulseBootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    Pulse.scheduleDigest(context.applicationContext)
+    val app = context.applicationContext
+    // A digest time that passed while the phone was off is delivered now instead of being skipped.
+    if (Pulse.digestOverdue(app)) Pulse.deliverDigest(app)
+    Pulse.scheduleDigest(app)
+    Pulse.rearmReminders(app)
+  }
+}
+
+class ReminderReceiver : BroadcastReceiver() {
+  override fun onReceive(context: Context, intent: Intent) {
+    Pulse.removeReminder(context.applicationContext, intent.getLongExtra("id", 0))
+    Pulse.postReminder(
+      context.applicationContext,
+      intent.getLongExtra("id", 0),
+      intent.getStringExtra("app") ?: "",
+      intent.getStringExtra("title") ?: "",
+      intent.getStringExtra("text") ?: ""
+    )
   }
 }

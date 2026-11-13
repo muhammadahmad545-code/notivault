@@ -49,17 +49,34 @@ object Pulse {
     }
   }
 
-  private val codeContext = Regex("(?i)\\b(code|otp|one[- ]time|verification|verify|passcode|password|pin|token|login)\\b")
-  private val codePattern = Regex("(?<!\\d)(?<!\\d[- ])(\\d{4,8}|\\d{3}[- ]\\d{3})(?!\\d)(?![- ]\\d)")
+  private val trigger = Regex("(?i)(?:^|[^a-z])(code|otp|one[- ]time|verification|verify|passcode|pin|token)(?![a-z])")
+  private val titleTrigger = Regex("(?i)(otp|verification|one[- ]time|passcode|security code)")
+  private val postal = Regex("(?i)\\bpin\\s*code\\b")
+  private val candidate = Regex("([0-9]{4,8}|[0-9]{3}[- ][0-9]{3})")
+  private val moneyBefore = Regex("(?i)(rs\\.?|pkr|usd|\\$|amount|amt|of rs\\.?)\\s*$")
 
-  /** Same rules as src/lib/otp.ts, which is the tested reference. */
+  /** Same rules as src/lib/otp.ts, which is the tested reference. Keep the two in step. */
   fun extractCode(title: String, text: String): String? {
-    val body = "$title $text"
-    if (!codeContext.containsMatchIn(body)) return null
-    val candidates = codePattern.findAll(body).map { it.value.replace(Regex("[- ]"), "") }
-      .filter { candidate -> !(candidate.length == 4 && candidate.toInt() in 1900..2099) }
-      .toList()
-    return candidates.firstOrNull()
+    val body = postal.replace(text) { " ".repeat(8) }
+    val triggers = trigger.findAll(body).map { it.range.first + it.value.length / 2.0 }.toList()
+    if (triggers.isEmpty() && !titleTrigger.containsMatchIn(title)) return null
+    data class Candidate(val code: String, val start: Int, val end: Int)
+    val candidates = candidate.findAll(body).mapNotNull { m ->
+      val start = m.range.first
+      val end = m.range.last + 1
+      val before = body.substring(maxOf(0, start - 2), start)
+      val after = body.substring(end, minOf(body.length, end + 2))
+      if (Regex("[0-9][- ]?$").containsMatchIn(before) || Regex("^[- ]?[0-9]").containsMatchIn(after)) return@mapNotNull null
+      if (moneyBefore.containsMatchIn(body.substring(maxOf(0, start - 8), start))) return@mapNotNull null
+      if (Regex("^[.,][0-9]").containsMatchIn(after)) return@mapNotNull null
+      Candidate(m.value.replace(Regex("[- ]"), ""), start, end)
+    }.toList()
+    val nonYears = candidates.filter { !(it.code.length == 4 && it.code.toInt() in 1900..2099) }
+    val pool = if (nonYears.isNotEmpty()) nonYears else candidates
+    if (pool.isEmpty()) return null
+    if (triggers.isEmpty()) return pool.first().code
+    fun distance(c: Candidate) = triggers.minOf { t -> minOf(Math.abs(t - c.start), Math.abs(t - c.end)) }
+    return pool.minByOrNull { distance(it) }?.code
   }
 
   fun ensureChannels(context: Context) {
@@ -107,6 +124,14 @@ object Pulse {
       .setTimeoutAfter(10 * 60 * 1000L)
       .setAutoCancel(true)
       .addAction(0, "Copy", copy)
+      .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+      .setPublicVersion(
+        NotificationCompat.Builder(context, CHANNEL_CODES)
+          .setSmallIcon(context.applicationInfo.icon)
+          .setContentTitle("Verification code received")
+          .setContentText("Unlock to view")
+          .build()
+      )
       .build()
     try {
       NotificationManagerCompat.from(context).notify(CopyCodeReceiver.NOTIFICATION_ID, notification)
@@ -115,7 +140,14 @@ object Pulse {
     }
   }
 
-  fun postAlert(context: Context, app: String, title: String, text: String, ruleName: String) {
+  /** Stable id per source notification, so updates replace the alert instead of stacking. */
+  fun alertId(key: String): Int = ("alert:" + key).hashCode()
+
+  fun cancelAlert(context: Context, key: String) {
+    NotificationManagerCompat.from(context).cancel(alertId(key))
+  }
+
+  fun postAlert(context: Context, key: String, app: String, title: String, text: String, ruleName: String) {
     if (!canNotify(context)) return
     ensureChannels(context)
     val notification = NotificationCompat.Builder(context, CHANNEL_ALERTS)
@@ -125,11 +157,12 @@ object Pulse {
       .setSubText("$app · $ruleName")
       .setStyle(NotificationCompat.BigTextStyle().bigText(text))
       .setPriority(NotificationCompat.PRIORITY_HIGH)
+      .setOnlyAlertOnce(true)
       .setAutoCancel(true)
       .apply { openApp(context, "", 7303)?.let { setContentIntent(it) } }
       .build()
     try {
-      NotificationManagerCompat.from(context).notify((System.nanoTime() % Int.MAX_VALUE).toInt(), notification)
+      NotificationManagerCompat.from(context).notify(alertId(key), notification)
     } catch (e: SecurityException) {
       // Ignore: the user turned notifications off.
     }
@@ -165,14 +198,39 @@ object Pulse {
     else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, pending)
   }
 
+  /** True when a digest time passed since the last delivered digest (e.g. the phone was off). */
+  fun digestOverdue(context: Context): Boolean {
+    val last = prefs(context).getLong("lastDigestAt", 0)
+    if (last == 0L) return false
+    val now = System.currentTimeMillis()
+    return digestTimes(context).any { minutes ->
+      (0..1).any { back ->
+        val at = Calendar.getInstance().apply {
+          timeInMillis = now
+          add(Calendar.DAY_OF_YEAR, -back)
+          set(Calendar.HOUR_OF_DAY, minutes / 60)
+          set(Calendar.MINUTE, minutes % 60)
+          set(Calendar.SECOND, 0)
+          set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        at in (last + 1)..now
+      }
+    }
+  }
+
   fun deliverDigest(context: Context) {
     val prefs = prefs(context)
     val since = prefs.getLong("lastDigestAt", 0)
     val db = PulseDb.get(context)
     val count = db.countState("digest", since)
     val apps = db.appsInState("digest", since)
+    if (count == 0) {
+      prefs.edit().putLong("lastDigestAt", System.currentTimeMillis()).apply()
+      return
+    }
+    // Only mark the digest delivered once it can actually be shown; otherwise keep counting.
+    if (!canNotify(context)) return
     prefs.edit().putLong("lastDigestAt", System.currentTimeMillis()).apply()
-    if (count == 0 || !canNotify(context)) return
     ensureChannels(context)
     val notification = NotificationCompat.Builder(context, CHANNEL_DIGEST)
       .setSmallIcon(context.applicationInfo.icon)
@@ -183,6 +241,71 @@ object Pulse {
       .build()
     try {
       NotificationManagerCompat.from(context).notify(DIGEST_NOTIFICATION, notification)
+    } catch (e: SecurityException) {
+      // Ignore.
+    }
+  }
+
+  // ---- remind me later ---------------------------------------------------------------------------
+
+  /** Pending reminders are kept in prefs so they can be re-armed after a reboot. */
+  @Synchronized
+  private fun saveReminders(context: Context, list: JSONArray) {
+    prefs(context).edit().putString("reminders", list.toString()).apply()
+  }
+
+  @Synchronized
+  fun pendingReminders(context: Context): JSONArray = try { JSONArray(prefs(context).getString("reminders", "[]")) } catch (e: Exception) { JSONArray() }
+
+  fun addReminder(context: Context, id: Long, at: Long, app: String, title: String, text: String) {
+    val list = pendingReminders(context)
+    val next = JSONArray()
+    for (i in 0 until list.length()) list.optJSONObject(i)?.let { if (it.optLong("id") != id) next.put(it) }
+    next.put(JSONObject().put("id", id).put("at", at).put("app", app).put("title", title).put("text", text))
+    saveReminders(context, next)
+    scheduleReminder(context, id, at, app, title, text)
+  }
+
+  fun removeReminder(context: Context, id: Long) {
+    val list = pendingReminders(context)
+    val next = JSONArray()
+    for (i in 0 until list.length()) list.optJSONObject(i)?.let { if (it.optLong("id") != id) next.put(it) }
+    saveReminders(context, next)
+  }
+
+  fun rearmReminders(context: Context) {
+    val now = System.currentTimeMillis()
+    val list = pendingReminders(context)
+    for (i in 0 until list.length()) {
+      val r = list.optJSONObject(i) ?: continue
+      // Overdue ones (phone was off) fire right away.
+      scheduleReminder(context, r.optLong("id"), maxOf(r.optLong("at"), now + 2000), r.optString("app"), r.optString("title"), r.optString("text"))
+    }
+  }
+
+  fun scheduleReminder(context: Context, id: Long, at: Long, app: String, title: String, text: String) {
+    val intent = Intent(context, ReminderReceiver::class.java)
+      .putExtra("id", id).putExtra("app", app).putExtra("title", title).putExtra("text", text)
+    val pending = PendingIntent.getBroadcast(context, ("remind:$id").hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    val alarms = context.getSystemService(AlarmManager::class.java)
+    if (Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms()) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
+    else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
+  }
+
+  fun postReminder(context: Context, id: Long, app: String, title: String, text: String) {
+    if (!canNotify(context)) return
+    ensureChannels(context)
+    val notification = NotificationCompat.Builder(context, CHANNEL_ALERTS)
+      .setSmallIcon(context.applicationInfo.icon)
+      .setContentTitle("Reminder: ${title.ifEmpty { app }}")
+      .setContentText(text)
+      .setSubText(app)
+      .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+      .setAutoCancel(true)
+      .apply { openApp(context, "n/$id", ("open:$id").hashCode())?.let { setContentIntent(it) } }
+      .build()
+    try {
+      NotificationManagerCompat.from(context).notify(("remind:$id").hashCode(), notification)
     } catch (e: SecurityException) {
       // Ignore.
     }

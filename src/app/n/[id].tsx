@@ -1,12 +1,13 @@
-import { Button, Card, Header, IconButton, Screen, SectionTitle, Text, formatRelativeTime, toMessage, useTheme, useToast } from '@basalt/core';
+import { Appear, Badge, Button, Card, Chip, Header, IconButton, Screen, SectionTitle, Text, formatRelativeTime, toMessage, useTheme, useToast } from '@basalt/core';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Copy, KeyRound, ListFilter, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { AlarmClock, AppWindow, Copy, KeyRound, ListFilter, Star, Trash2 } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import type { CapturedNotification } from '../../../modules/pulse-listener';
 import { AppAvatar } from '../../components/NotificationRow';
 import { Listener } from '../../lib/settings';
+import { requestNotifications } from '../../lib/useSetup';
 
 const REMOVED: Record<string, string> = {
   opened: 'You opened it',
@@ -17,44 +18,43 @@ const REMOVED: Record<string, string> = {
   other: 'It was removed',
 };
 
+function laterOptions(): { label: string; at: number }[] {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
+  const evening = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0);
+  const out = [
+    { label: 'In 1 hour', at: Date.now() + 3_600_000 },
+    { label: 'In 3 hours', at: Date.now() + 3 * 3_600_000 },
+  ];
+  if (evening.getTime() - Date.now() > 3_600_000) out.push({ label: 'This evening', at: evening.getTime() });
+  out.push({ label: 'Tomorrow 9:00', at: tomorrow.getTime() });
+  return out;
+}
+
 export default function Detail() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [item, setItem] = useState<CapturedNotification | null | undefined>(undefined);
-  const [versions, setVersions] = useState<CapturedNotification[]>([]);
+  const [thread, setThread] = useState<CapturedNotification[]>([]);
+  const [showLater, setShowLater] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     Listener.byId(Number(id))
       .then(async (row) => {
         setItem(row);
-        if (row && row.versions > 1) setVersions(await Listener.versions(row.key));
+        setThread(row && row.versions > 1 ? await Listener.versions(row.key) : []);
       })
       .catch(() => setItem(null));
   }, [id]);
+
+  useEffect(load, [load]);
 
   const copy = async (text: string, label: string) => {
     await Clipboard.setStringAsync(text);
     toast(`${label} copied`, 'success');
   };
-
-  const remove = () =>
-    Alert.alert('Delete this notification?', 'It is removed from Pulse only.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await Listener.deleteOne(Number(id));
-            router.back();
-          } catch (error) {
-            toast(toMessage(error), 'danger');
-          }
-        },
-      },
-    ]);
 
   if (item === undefined) {
     return (
@@ -72,56 +72,112 @@ export default function Detail() {
     );
   }
 
+  const toggleStar = async () => {
+    try {
+      await Listener.setStarred(item.id, !item.starred);
+      setItem({ ...item, starred: !item.starred });
+      toast(item.starred ? 'Removed from starred' : 'Starred. Starred notifications are never deleted by retention.', 'success');
+    } catch (error) {
+      toast(toMessage(error), 'danger');
+    }
+  };
+
+  const remind = async (at: number, label: string) => {
+    if (!(await requestNotifications())) return toast('Allow notifications for Pulse to get reminders.', 'danger');
+    try {
+      await Listener.remindLater(item.id, at);
+      setShowLater(false);
+      toast(`I’ll remind you ${label.toLowerCase()}`, 'success');
+    } catch (error) {
+      toast(toMessage(error), 'danger');
+    }
+  };
+
+  const remove = () =>
+    Alert.alert('Delete this notification?', 'It is removed from Pulse only.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await Listener.deleteOne(item.id);
+            router.back();
+          } catch (error) {
+            toast(toMessage(error), 'danger');
+          }
+        },
+      },
+    ]);
+
   return (
-    <Screen>
-      <Header title={item.app} subtitle={new Date(item.postedAt).toLocaleString()} onBack={() => router.back()} right={<IconButton icon={Trash2} label="Delete" tone="danger" onPress={remove} />} />
-      <Card style={{ gap: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <AppAvatar name={item.app} pkg={item.package} size={48} />
-          <View style={{ flex: 1 }}>
-            <Text variant="heading" selectable>
-              {item.title || item.app}
-            </Text>
-            <Text variant="caption" color="textFaint" selectable>
-              {item.package}
-            </Text>
+    <Screen aurora>
+      <Header
+        title={item.app}
+        subtitle={new Date(item.postedAt).toLocaleString()}
+        onBack={() => router.back()}
+        right={
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <IconButton icon={Star} label={item.starred ? 'Unstar' : 'Star'} tone={item.starred ? 'accent' : 'text'} onPress={() => void toggleStar()} />
+            <IconButton icon={Trash2} label="Delete" tone="danger" onPress={remove} />
           </View>
-        </View>
-        <Text selectable>{item.text}</Text>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Button label="Copy text" icon={Copy} variant="secondary" onPress={() => copy(`${item.title}\n${item.text}`.trim(), 'Text')} style={{ flex: 1 }} />
-          {item.code ? <Button label={`Copy ${item.code}`} icon={KeyRound} onPress={() => copy(item.code!, 'Code')} style={{ flex: 1 }} /> : null}
-        </View>
-      </Card>
-
-      <Card style={{ gap: spacing.xs }}>
-        <Text variant="caption" color="textMuted">
-          {item.state === 'muted' ? `Quieted by rule “${item.ruleName}”` : item.state === 'digest' ? `Held for digest by rule “${item.ruleName}”` : 'Shown normally'}
-        </Text>
-        {item.removedAt ? (
-          <Text variant="caption" color={item.removedBy === 'app' ? 'warning' : 'textMuted'}>
-            {REMOVED[item.removedBy ?? 'other']} · {formatRelativeTime(item.removedAt)}
+        }
+      />
+      <Appear index={0}>
+        <Card variant="raised" style={{ gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <AppAvatar name={item.app} pkg={item.package} size={52} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text variant="heading" selectable>
+                {item.title || item.app}
+              </Text>
+              <Text variant="caption" color="textFaint" selectable>
+                {item.package}
+              </Text>
+            </View>
+          </View>
+          <Text selectable style={{ fontSize: 16, lineHeight: 24 }}>
+            {item.text}
           </Text>
-        ) : null}
-        {item.category ? (
-          <Text variant="caption" color="textFaint">
-            Category: {item.category}
-          </Text>
-        ) : null}
-      </Card>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {item.state === 'muted' ? <Badge label={`Quieted by “${item.ruleName}”`} tone="muted" /> : null}
+            {item.state === 'digest' ? <Badge label={`Held for digest by “${item.ruleName}”`} tone="accent" /> : null}
+            {item.removedAt ? <Badge label={`${REMOVED[item.removedBy ?? 'other']} · ${formatRelativeTime(item.removedAt)}`} tone={item.removedBy === 'app' ? 'warning' : 'muted'} /> : null}
+          </View>
+        </Card>
+      </Appear>
 
-      {versions.length > 1 ? (
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Button label="Copy" icon={Copy} variant="secondary" onPress={() => copy(`${item.title}\n${item.text}`.trim(), 'Text')} style={{ flex: 1 }} />
+        <Button label="Remind me" icon={AlarmClock} variant="secondary" onPress={() => setShowLater(!showLater)} style={{ flex: 1 }} />
+      </View>
+      {item.code ? <Button label={`Copy code ${item.code}`} icon={KeyRound} size="lg" onPress={() => copy(item.code!, 'Code')} /> : null}
+      {showLater ? (
+        <Card style={{ gap: spacing.sm }}>
+          <Text variant="label" color="textMuted">
+            Remind me about this
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {laterOptions().map((o) => (
+              <Chip key={o.label} label={o.label} onPress={() => void remind(o.at, o.label)} />
+            ))}
+          </View>
+        </Card>
+      ) : null}
+
+      {thread.length > 1 ? (
         <>
-          <SectionTitle title={`History · ${versions.length} versions`} />
+          <SectionTitle title={`Thread · ${thread.length}${thread.length === 100 ? '+' : ''}`} />
           <Text variant="caption" color="textMuted">
-            Apps update a notification as a conversation grows or when a message is edited or deleted. Pulse keeps every version.
+            Everything this app posted under the same notification: a chat’s messages, or the versions of an edited one.
           </Text>
-          {versions.map((v, i) => (
+          {thread.map((v) => (
             <Card key={v.id} style={{ gap: spacing.xs, borderColor: v.id === item.id ? colors.accent : colors.border }}>
               <Text variant="caption" color="textFaint">
-                Version {i + 1} · {new Date(v.postedAt).toLocaleTimeString()}
+                {new Date(v.postedAt).toLocaleString()}
+                {v.removedBy === 'app' ? ' · removed by app' : ''}
               </Text>
-              {v.title ? <Text variant="bodyStrong">{v.title}</Text> : null}
+              {v.title && v.title !== item.title ? <Text variant="bodyStrong">{v.title}</Text> : null}
               <Text selectable color="textMuted">
                 {v.text}
               </Text>
@@ -130,12 +186,10 @@ export default function Detail() {
         </>
       ) : null}
 
-      <Button
-        label={`Make a rule for ${item.app}`}
-        icon={ListFilter}
-        variant="ghost"
-        onPress={() => router.push({ pathname: '/rules/[id]', params: { id: 'new', pkg: item.package, app: item.app } })}
-      />
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Button label={`About ${item.app}`} icon={AppWindow} variant="ghost" onPress={() => router.push({ pathname: '/app/[pkg]', params: { pkg: item.package, name: item.app } })} style={{ flex: 1 }} />
+        <Button label="Make a rule" icon={ListFilter} variant="ghost" onPress={() => router.push({ pathname: '/rules/[id]', params: { id: 'new', pkg: item.package, app: item.app } })} style={{ flex: 1 }} />
+      </View>
     </Screen>
   );
 }

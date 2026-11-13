@@ -1,9 +1,10 @@
-import { Button, Card, EmptyState, Header, Screen, Text, Toggle, useTheme, useToast } from '@basalt/core';
+import { Appear, Button, Card, Chip, EmptyState, Header, Screen, SectionTitle, Text, Toggle, useTheme, useToast } from '@basalt/core';
+import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { ListFilter, Plus } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
-import { ACTION_INFO } from '../../lib/rules';
+import { ACTION_INFO, TEMPLATES } from '../../lib/rules';
 import { rulesSetting, syncNative } from '../../lib/settings';
 
 export default function Rules() {
@@ -19,8 +20,23 @@ export default function Rules() {
   };
 
   return (
-    <Screen footer={<Button label="New rule" icon={Plus} size="lg" onPress={() => router.push({ pathname: '/rules/[id]', params: { id: 'new' } })} />}>
+    <Screen aurora footer={<Button label="New rule" icon={Plus} size="lg" onPress={() => router.push({ pathname: '/rules/[id]', params: { id: 'new' } })} />}>
       <Header title="Rules" subtitle="The first matching rule wins" onBack={() => router.back()} />
+      <SectionTitle title="Start from a template" />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+        {TEMPLATES.map((t) => (
+          <Chip
+            key={t.name}
+            label={t.name}
+            onPress={() => {
+              setRules([...rules, { ...t, id: Crypto.randomUUID(), enabled: true }]);
+              const error = syncNative();
+              toast(error ?? `Added “${t.name}”. Tap it to adjust.`, error ? 'danger' : 'success');
+            }}
+          />
+        ))}
+      </View>
+      <SectionTitle title={`Your rules · ${rules.length}`} />
       {rules.length === 0 ? (
         <EmptyState
           icon={ListFilter}
@@ -28,8 +44,9 @@ export default function Rules() {
           message="Quiet noisy apps, hold shopping and social notifications for a digest, or turn messages with “urgent” into priority alerts."
         />
       ) : (
-        rules.map((rule) => (
-          <Card key={rule.id} onPress={() => router.push({ pathname: '/rules/[id]', params: { id: rule.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, opacity: rule.enabled ? 1 : 0.6 }}>
+        rules.map((rule, i) => (
+          <Appear key={rule.id} index={i}>
+          <Card onPress={() => router.push({ pathname: '/rules/[id]', params: { id: rule.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, opacity: rule.enabled ? 1 : 0.6 }}>
             <View style={{ flex: 1, gap: 2 }}>
               <Text variant="bodyStrong">{rule.name}</Text>
               <Text variant="caption" color="textMuted" numberOfLines={2}>
@@ -39,6 +56,7 @@ export default function Rules() {
             </View>
             <Toggle value={rule.enabled} accessibilityLabel={`Enable ${rule.name}`} onChange={(v) => toggle(rule.id, v)} />
           </Card>
+          </Appear>
         ))
       )}
     </Screen>

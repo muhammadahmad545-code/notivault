@@ -7,9 +7,12 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
+import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+
+class PulseError(message: String) : CodedException("ERR_PULSE", message, null)
 
 class PulseListenerModule : Module() {
   private val context: Context
@@ -65,9 +68,18 @@ class PulseListenerModule : Module() {
       if (Build.VERSION.SDK_INT >= 31) start(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
     }
 
-    AsyncFunction("query") { search: String?, pkg: String?, state: String?, before: Double?, limit: Int ->
-      db().query(search, pkg, state, before?.toLong(), limit)
+    AsyncFunction("query") { search: String?, pkg: String?, state: String?, beforeAt: Double?, beforeId: Double?, limit: Int ->
+      db().query(search, pkg, state, beforeAt?.toLong(), beforeId?.toLong(), limit)
     }
+
+    AsyncFunction("setStarred") { id: Double, starred: Boolean -> db().setStarred(id.toLong(), starred) }
+
+    AsyncFunction("remindLater") { id: Double, at: Double ->
+      val row = db().byId(id.toLong()) ?: throw PulseError("This notification no longer exists.")
+      Pulse.addReminder(context, id.toLong(), at.toLong(), row["app"] as String, row["title"] as String, row["text"] as String)
+    }
+
+    Function("notificationsEnabled") { NotificationManagerCompat.from(context).areNotificationsEnabled() }
 
     AsyncFunction("versions") { key: String -> db().versions(key) }
 
@@ -75,7 +87,7 @@ class PulseListenerModule : Module() {
 
     AsyncFunction("apps") { db().apps() }
 
-    AsyncFunction("stats") { since: Double -> db().stats(since.toLong()) }
+    AsyncFunction("stats") { since: Double, pkg: String? -> db().stats(since.toLong(), pkg) }
 
     AsyncFunction("deleteAll") { db().deleteAll() }
 
@@ -90,7 +102,7 @@ class PulseListenerModule : Module() {
       Pulse.scheduleDigest(context)
     }
 
-    Function("setOptions") { codes: Boolean, includeOngoing: Boolean, retentionDays: Int ->
+    AsyncFunction("setOptions") { codes: Boolean, includeOngoing: Boolean, retentionDays: Int ->
       Pulse.prefs(context).edit()
         .putBoolean("codes", codes)
         .putBoolean("includeOngoing", includeOngoing)
