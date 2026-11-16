@@ -1,15 +1,14 @@
-import { FloatingTabBar } from '@basalt/core';
-import { Tabs } from 'expo-router/js-tabs';
+import { SlotTabs } from '@basalt/core';
 import { BarChart3, Clock3, Inbox, Settings } from 'lucide-react-native';
 import React from 'react';
 
-const ITEMS = [
-  { name: 'index', label: 'Inbox', icon: Inbox },
-  { name: 'digest', label: 'Digest', icon: Clock3 },
-  { name: 'insights', label: 'Insights', icon: BarChart3 },
-  { name: 'settings', label: 'Settings', icon: Settings },
+const TABS = [
+  { href: '/', label: 'Inbox', icon: Inbox },
+  { href: '/digest', label: 'Digest', icon: Clock3 },
+  { href: '/insights', label: 'Insights', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function TabsLayout() {
-  return <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} items={ITEMS} />} />;
+  return <SlotTabs tabs={TABS} />;
 }
