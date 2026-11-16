@@ -1,6 +1,7 @@
 import { Appear, Bars, Card, EmptyState, Hero, Pressable, Ring, Screen, SectionTitle, SegmentedControl, StatTile, TAB_BAR_SPACE, Text, useTheme } from '@basalt/core';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { BarChart3, ChevronRight } from 'lucide-react-native';
+import BarChart3 from 'lucide-react-native/icons/chart-column';
+import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import type { Stats } from '../../../modules/pulse-listener';

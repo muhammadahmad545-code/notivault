@@ -1,6 +1,7 @@
 import { Appear, Button, Card, EmptyState, Hero, Screen, SectionTitle, TAB_BAR_SPACE, Text, useTheme, useToast } from '@basalt/core';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Clock3, Send } from 'lucide-react-native';
+import Clock3 from 'lucide-react-native/icons/clock-3';
+import Send from 'lucide-react-native/icons/send';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import type { CapturedNotification } from '../../../modules/pulse-listener';

@@ -1,7 +1,8 @@
 import { Appear, Button, Card, Chip, EmptyState, Header, Screen, SectionTitle, Text, Toggle, useTheme, useToast } from '@basalt/core';
 import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
-import { ListFilter, Plus } from 'lucide-react-native';
+import ListFilter from 'lucide-react-native/icons/list-filter';
+import Plus from 'lucide-react-native/icons/plus';
 import React from 'react';
 import { View } from 'react-native';
 import { ACTION_INFO, TEMPLATES } from '../../lib/rules';

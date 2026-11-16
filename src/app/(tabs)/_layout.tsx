@@ -1,5 +1,8 @@
 import { SlotTabs } from '@basalt/core';
-import { BarChart3, Clock3, Inbox, Settings } from 'lucide-react-native';
+import BarChart3 from 'lucide-react-native/icons/chart-column';
+import Clock3 from 'lucide-react-native/icons/clock-3';
+import Inbox from 'lucide-react-native/icons/inbox';
+import Settings from 'lucide-react-native/icons/settings';
 import React from 'react';
 
 const TABS = [

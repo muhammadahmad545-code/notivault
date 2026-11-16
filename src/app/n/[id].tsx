@@ -1,7 +1,13 @@
 import { Appear, Badge, Button, Card, Chip, Header, IconButton, Screen, SectionTitle, Text, formatRelativeTime, toMessage, useTheme, useToast } from '@basalt/core';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlarmClock, AppWindow, Copy, KeyRound, ListFilter, Star, Trash2 } from 'lucide-react-native';
+import AlarmClock from 'lucide-react-native/icons/alarm-clock';
+import AppWindow from 'lucide-react-native/icons/app-window';
+import Copy from 'lucide-react-native/icons/copy';
+import KeyRound from 'lucide-react-native/icons/key-round';
+import ListFilter from 'lucide-react-native/icons/list-filter';
+import Star from 'lucide-react-native/icons/star';
+import Trash2 from 'lucide-react-native/icons/trash';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import type { CapturedNotification } from '../../../modules/pulse-listener';

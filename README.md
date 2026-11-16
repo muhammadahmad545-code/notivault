@@ -4,6 +4,8 @@ A private, searchable inbox for every notification on your Android phone, with r
 
 **[Download the latest APK](https://github.com/muhammadahmad545-code/pulse/releases/latest)**
 
+Pick the file ending in **`-arm64-v8a.apk`**: that is the right one for almost every phone from the last several years. `-armeabi-v7a.apk` is for older 32-bit phones and `-x86_64.apk` for emulators and Chromebooks. Installed apps update themselves to the matching file.
+
 ## What's new in 1.1
 
 - **Redesigned** with tab navigation (Inbox, Digest, Insights, Settings), live counts for today, day-grouped history and a first-run introduction.

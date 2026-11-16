@@ -1,6 +1,11 @@
 import { Appear, Aurora, Button, Card, Chip, EmptyState, Hero, IconButton, Pressable, Skeleton, StatTile, TAB_BAR_SPACE, Text, UpdateCard, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { BellRing, CircleCheck, CircleDashed, ListFilter, Search, X } from 'lucide-react-native';
+import BellRing from 'lucide-react-native/icons/bell-ring';
+import CircleCheck from 'lucide-react-native/icons/circle-check';
+import CircleDashed from 'lucide-react-native/icons/circle-dashed';
+import ListFilter from 'lucide-react-native/icons/list-filter';
+import Search from 'lucide-react-native/icons/search';
+import X from 'lucide-react-native/icons/x';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

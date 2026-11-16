@@ -1,7 +1,9 @@
 import { Appear, Bars, Button, Card, Header, Screen, SectionTitle, StatTile, Text, useTheme, useToast } from '@basalt/core';
 import * as Crypto from 'expo-crypto';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BellOff, Clock3, Siren } from 'lucide-react-native';
+import BellOff from 'lucide-react-native/icons/bell-off';
+import Clock3 from 'lucide-react-native/icons/clock-3';
+import Siren from 'lucide-react-native/icons/siren';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import type { CapturedNotification, Stats } from '../../../modules/pulse-listener';

@@ -2,7 +2,14 @@ import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, Se
 import { canUseLock } from '@basalt/core/src/lock/LockGate';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { Code, ListFilter, Plus, RefreshCw, ShieldCheck, Sparkles, Trash2, X } from 'lucide-react-native';
+import Code from 'lucide-react-native/icons/code';
+import ListFilter from 'lucide-react-native/icons/list-filter';
+import Plus from 'lucide-react-native/icons/plus';
+import RefreshCw from 'lucide-react-native/icons/refresh-cw';
+import ShieldCheck from 'lucide-react-native/icons/shield-check';
+import Sparkles from 'lucide-react-native/icons/sparkles';
+import Trash2 from 'lucide-react-native/icons/trash';
+import X from 'lucide-react-native/icons/x';
 import React from 'react';
 import { Alert, Platform, View } from 'react-native';
 import { TimeField } from '../../components/TimeField';

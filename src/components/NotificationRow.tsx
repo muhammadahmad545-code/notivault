@@ -1,5 +1,10 @@
 import { Chip, Pressable, Text, formatRelativeTime, useTheme } from '@basalt/core';
-import { BellOff, Clock3, KeyRound, MessagesSquare, Star, Trash } from 'lucide-react-native';
+import BellOff from 'lucide-react-native/icons/bell-off';
+import Clock3 from 'lucide-react-native/icons/clock-3';
+import KeyRound from 'lucide-react-native/icons/key-round';
+import MessagesSquare from 'lucide-react-native/icons/messages-square';
+import Star from 'lucide-react-native/icons/star';
+import Trash from 'lucide-react-native/icons/trash';
 import React from 'react';
 import { View } from 'react-native';
 import type { CapturedNotification } from '../../modules/pulse-listener';

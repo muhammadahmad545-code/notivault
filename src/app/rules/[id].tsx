@@ -1,7 +1,7 @@
 import { Button, Card, Chip, Header, IconButton, Screen, SectionTitle, SegmentedControl, Text, TextField, useTheme, useToast } from '@basalt/core';
 import * as Crypto from 'expo-crypto';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Trash2 } from 'lucide-react-native';
+import Trash2 from 'lucide-react-native/icons/trash';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 import type { AppSummary, CapturedNotification } from '../../../modules/pulse-listener';
