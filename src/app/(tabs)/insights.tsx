@@ -57,7 +57,7 @@ export default function Insights() {
             </Card>
           </Appear>
           <Appear index={1} style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <StatTile label="Notifications" value={String(stats.total)} detail={days > 1 ? `${Math.round(stats.total / days)} a day` : 'today'} />
+            <StatTile label="Total" value={String(stats.total)} detail={days > 1 ? `${Math.round(stats.total / days)} a day` : 'today'} />
             <StatTile label="Codes" value={String(stats.codes)} />
             <StatTile label="Busiest" value={`${String(busiest).padStart(2, '0')}:00`} />
           </Appear>

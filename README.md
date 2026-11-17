@@ -6,6 +6,12 @@ A private, searchable inbox for every notification on your Android phone, with r
 
 Pick the file ending in **`-arm64-v8a.apk`**: that is the right one for almost every phone from the last several years. `-armeabi-v7a.apk` is for older 32-bit phones and `-x86_64.apk` for emulators and Chromebooks. Installed apps update themselves to the matching file.
 
+## What's new in 1.2
+
+- **Calmer, cleaner design:** plain surfaces, a docked tab bar, clear type and no distracting motion.
+- **Quiet hours:** during the hours you choose, notifications are held for your digest; priority rules and verification codes still come through.
+- **Tested end to end on every build:** an Android emulator runs the app like a user before any release.
+
 ## What's new in 1.1
 
 - **Redesigned** with tab navigation (Inbox, Digest, Insights, Settings), live counts for today, day-grouped history and a first-run introduction.
