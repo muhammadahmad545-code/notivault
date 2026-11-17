@@ -83,15 +83,18 @@ class PulseListenerService : NotificationListenerService() {
 
     val app = appLabel(sbn.packageName)
     val rule = Pulse.match(Pulse.rules(this), sbn.packageName, content.title, content.latest)
-    val state = when (rule?.action) {
-      "mute" -> "muted"
-      "digest" -> "digest"
+    val code = if (prefs.getBoolean("codes", true)) Pulse.extractCode(content.title, content.latest) else null
+    // Quiet hours hold everything for the digest, except priority-alert rules and verification codes.
+    val quiet = rule?.action != "alert" && code == null && Pulse.inQuietHours(this)
+    val state = when {
+      rule?.action == "mute" -> "muted"
+      rule?.action == "digest" || quiet -> "digest"
       else -> "shown"
     }
-    val code = if (prefs.getBoolean("codes", true)) Pulse.extractCode(content.title, content.latest) else null
+    val ruleName = rule?.name ?: if (quiet) "Quiet hours" else null
 
     val id = PulseDb.get(this).insert(
-      PulseDb.Entry(sbn.key, sbn.packageName, app, content.title, content.text, n.category, sbn.postTime, state, rule?.name, code)
+      PulseDb.Entry(sbn.key, sbn.packageName, app, content.title, content.text, n.category, sbn.postTime, state, ruleName, code)
     )
 
     // Rules apply even to an unchanged re-post, otherwise a quieted notification would reappear.

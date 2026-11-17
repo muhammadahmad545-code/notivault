@@ -63,6 +63,7 @@ declare class PulseListenerModule extends NativeModule<Events> {
   setDigestTimes(json: string): void;
   setOptions(codes: boolean, includeOngoing: boolean, retentionDays: number): Promise<void>;
   sendDigestNow(): void;
+  setQuietHours(enabled: boolean, start: number, end: number): void;
 }
 
 export default requireNativeModule<PulseListenerModule>('PulseListener');

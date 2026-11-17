@@ -112,5 +112,9 @@ class PulseListenerModule : Module() {
     }
 
     Function("sendDigestNow") { Pulse.deliverDigest(context) }
+
+    Function("setQuietHours") { enabled: Boolean, start: Int, end: Int ->
+      Pulse.prefs(context).edit().putBoolean("quietEnabled", enabled).putInt("quietStart", start).putInt("quietEnd", end).apply()
+    }
   }
 }

@@ -13,7 +13,8 @@ import X from 'lucide-react-native/icons/x';
 import React from 'react';
 import { Alert, Platform, View } from 'react-native';
 import { TimeField } from '../../components/TimeField';
-import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, onboardedSetting, ongoingSetting, retentionSetting, syncNative } from '../../lib/settings';
+import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, onboardedSetting, ongoingSetting, quietHoursSetting, retentionSetting, syncNative } from '../../lib/settings';
+import { inWindow } from '../../lib/quiet';
 import { clock } from '../../lib/time';
 
 const THEMES = [
@@ -34,6 +35,8 @@ export default function Settings() {
   const [ongoing, setOngoing] = ongoingSetting.use();
   const [retention, setRetention] = retentionSetting.use();
   const [times, setTimes] = digestTimesSetting.use();
+  const [quiet, setQuiet] = quietHoursSetting.use();
+  const nowMinute = new Date().getHours() * 60 + new Date().getMinutes();
   const updater = useUpdater({ source: UPDATE_SOURCE, auto: false });
 
   const apply = (change: () => void) => {
@@ -104,6 +107,35 @@ export default function Settings() {
         <Text variant="caption" color="textFaint">
           Starred notifications are always kept.
         </Text>
+      </Card>
+
+      <SectionTitle title="Quiet hours" />
+      <Card style={{ gap: spacing.md }}>
+        {row(
+          'Quiet hours',
+          quiet.enabled && inWindow(quiet.start, quiet.end, nowMinute)
+            ? 'On now. Notifications are held for your digest; priority rules and codes still come through.'
+            : 'During these hours, notifications are held for your digest instead of interrupting you. Priority rules and codes still come through.',
+          quiet.enabled,
+          (v) => apply(() => setQuiet({ ...quiet, enabled: v })),
+        )}
+        {quiet.enabled ? (
+          <View style={{ gap: spacing.md }}>
+            <Text variant="caption" color="textMuted">
+              From
+            </Text>
+            <TimeField label="Quiet hours start" minutes={quiet.start} onChange={(m) => apply(() => setQuiet({ ...quiet, start: m }))} />
+            <Text variant="caption" color="textMuted">
+              Until
+            </Text>
+            <TimeField label="Quiet hours end" minutes={quiet.end} onChange={(m) => apply(() => setQuiet({ ...quiet, end: m }))} />
+            {quiet.start === quiet.end ? (
+              <Text variant="caption" color="danger">
+                Start and end are the same, so quiet hours never apply.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </Card>
 
       <SectionTitle title="Digest times" />

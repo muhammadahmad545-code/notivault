@@ -170,6 +170,18 @@ object Pulse {
 
   // ---- digests ----------------------------------------------------------------------------------
 
+  /** True when quiet hours are on and the current local time is inside them (windows may cross midnight). */
+  fun inQuietHours(context: Context, now: Long = System.currentTimeMillis()): Boolean {
+    val prefs = prefs(context)
+    if (!prefs.getBoolean("quietEnabled", false)) return false
+    val start = prefs.getInt("quietStart", 22 * 60)
+    val end = prefs.getInt("quietEnd", 7 * 60)
+    if (start == end) return false
+    val cal = Calendar.getInstance().apply { timeInMillis = now }
+    val minute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+    return if (start < end) minute in start until end else minute >= start || minute < end
+  }
+
   fun digestTimes(context: Context): List<Int> {
     val array = try { JSONArray(prefs(context).getString("digestTimes", "[480,780,1200]")) } catch (e: Exception) { JSONArray() }
     return (0 until array.length()).map { array.optInt(it) }.filter { it in 0 until 24 * 60 }.sorted()
