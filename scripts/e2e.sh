@@ -3,8 +3,8 @@
 
 adb shell cmd notification allow_listener dev.basalt.pulse/expo.modules.pulselistener.PulseListenerService
 sleep 5
-adb shell cmd notification post -t "HBL Bank" otp1 "Your OTP for login is 482913. Do not share it." >/dev/null
-adb shell cmd notification post -t "Ali" chat1 "Lunch at 2 tomorrow?" >/dev/null
+adb shell "cmd notification post -t 'HBL Bank' otp1 'Your OTP for login is 482913. Do not share it.'" >/dev/null
+adb shell "cmd notification post -t 'Ali' chat1 'Lunch at 2 tomorrow?'" >/dev/null
 sleep 6
 
 # Return to the inbox and check both arrived, with the code recognised.
@@ -29,7 +29,7 @@ tap_text "Settings"; sleep 3
 tap_text "Rules"; sleep 3
 expect "Quiet sales and offers" 10 "rules screen shows templates"
 tap_text "Quiet sales and offers"; sleep 3
-adb shell cmd notification post -t "Daraz" sale1 "Mega sale today: 50% off everything" >/dev/null
+adb shell "cmd notification post -t 'Daraz' sale1 'Mega sale today: 50% off everything'" >/dev/null
 sleep 6
 if adb shell dumpsys notification --noredact | grep -q "Mega sale today"; then fail "quiet rule removes the sale from the shade"; else pass "quiet rule removes the sale from the shade"; fi
 adb shell input keyevent KEYCODE_BACK; sleep 2
