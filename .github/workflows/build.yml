@@ -94,7 +94,7 @@ jobs:
           for ABI in arm64-v8a armeabi-v7a x86_64; do
             SRC="android/app/build/outputs/apk/release/app-$ABI-release.apk"
             [ -f "$SRC" ] || { echo "::error::Missing $SRC"; ls android/app/build/outputs/apk/release; exit 1; }
-            OUT="dist/pulse-$VERSION-$ABI.apk"
+            OUT="dist/notivault-$VERSION-$ABI.apk"
             cp "$SRC" "$OUT"
             (cd dist && sha256sum "$(basename "$OUT")" > "$(basename "$OUT").sha256")
           done

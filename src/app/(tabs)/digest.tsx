@@ -39,7 +39,7 @@ export default function Digest() {
 
   return (
     <Screen aurora bottomSpace={TAB_BAR_SPACE}>
-      <Hero overline="Pulse" title="Digest" subtitle={next ? `Next digest at ${next}. Held notifications from the last 24 hours.` : 'No digest times set. Add some in Settings.'} />
+      <Hero overline="Notivault" title="Digest" subtitle={next ? `Next digest at ${next}. Held notifications from the last 24 hours.` : 'No digest times set. Add some in Settings.'} />
       {items && groups.length === 0 ? (
         <EmptyState icon={Clock3} title="Nothing held back" message="Make a “Hold for digest” rule for chatty apps, and their notifications collect here instead of interrupting you." />
       ) : null}

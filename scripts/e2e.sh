@@ -1,4 +1,4 @@
-# Pulse end-to-end: grant notification access, post real notifications, and check capture,
+# Notivault end-to-end: grant notification access, post real notifications, and check capture,
 # code detection, search, and a quiet rule. Sourced by smoke.sh (helpers come from there).
 
 adb shell cmd notification allow_listener dev.basalt.pulse/expo.modules.pulselistener.PulseListenerService
@@ -34,8 +34,12 @@ sleep 6
 if adb shell dumpsys notification --noredact | grep -q "Mega sale today"; then fail "quiet rule removes the sale from the shade"; else pass "quiet rule removes the sale from the shade"; fi
 adb shell input keyevent KEYCODE_BACK; sleep 2
 tap_text "Inbox"; sleep 4
-expect "Mega sale today" 10 "quieted notification is still kept in Pulse"
+expect "Mega sale today" 10 "quieted notification is still kept in Notivault"
 tap_text "Quieted"; sleep 4
 expect "Mega sale today" 10 "the Quieted filter shows it"
 expect_not "HBL Bank" 2 "the Quieted filter hides normal notifications"
 shot e2e-quieted
+
+# The app is called Notivault everywhere a user can see.
+tap_text "Settings"; sleep 3
+expect "Notivault" 10 "Settings uses the new name"

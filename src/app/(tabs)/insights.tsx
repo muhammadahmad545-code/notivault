@@ -37,10 +37,10 @@ export default function Insights() {
 
   return (
     <Screen aurora bottomSpace={TAB_BAR_SPACE}>
-      <Hero overline="Pulse" title="Insights" subtitle="Who interrupts you, and when." />
+      <Hero overline="Notivault" title="Insights" subtitle="Who interrupts you, and when." />
       <SegmentedControl options={RANGES} value={range} onChange={setRange} />
       {!stats ? <ActivityIndicator color={colors.accent} /> : null}
-      {stats && stats.total === 0 ? <EmptyState icon={BarChart3} title="No data yet" message="Insights fill in as Pulse captures notifications." /> : null}
+      {stats && stats.total === 0 ? <EmptyState icon={BarChart3} title="No data yet" message="Insights fill in as Notivault captures notifications." /> : null}
       {stats && stats.total > 0 ? (
         <>
           <Appear index={0}>

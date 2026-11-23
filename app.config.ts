@@ -9,7 +9,7 @@ function versionCode(version: string): number {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'Pulse',
+  name: 'Notivault',
   slug: 'pulse',
   scheme: 'pulse',
   version: pkg.version,

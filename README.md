@@ -1,4 +1,6 @@
-# Pulse
+# Notivault
+
+*Renamed from **Pulse** in 1.2.2, so it is not confused with Clocked (formerly AppPulse), the suite's screen-time tracker.*
 
 A private, searchable inbox for every notification on your Android phone, with rules that decide what is allowed to interrupt you.
 
@@ -23,9 +25,9 @@ Pick the file ending in **`-arm64-v8a.apk`**: that is the right one for almost e
 ## What it does
 
 - **Full history.** Every notification is kept, searchable by word prefix across app, title and text (“inv pay” finds “Invoice payment due”).
-- **Nothing lost to deletions or edits.** Apps update a notification as a chat grows or when a message is edited or deleted; Pulse keeps every version and marks notifications the app itself removed.
+- **Nothing lost to deletions or edits.** Apps update a notification as a chat grows or when a message is edited or deleted; Notivault keeps every version and marks notifications the app itself removed.
 - **Rules.** Match by app, by keywords, or both. The first matching rule decides:
-  - **Quiet**: removed from the shade, kept in Pulse.
+  - **Quiet**: removed from the shade, kept in Notivault.
   - **Hold for digest**: removed now, summarised at the times you choose (8:00, 13:00 and 20:00 by default).
   - **Priority alert**: repeated as a high-priority alert, so “urgent” from family gets through even when that app is muted.
   - The editor shows how many of your last 300 notifications the rule would have caught, before you save it.
@@ -49,15 +51,15 @@ DigestReceiver (exact alarm) ─▶ summary notification at digest times
 - Re-posts of an identical notification are de-duplicated per notification key, so a chat that updates its notification ten times is stored once per actual change.
 - Code detection only considers messages that talk about codes, and ignores years and digits that are part of longer numbers. The TypeScript version is the tested reference; the Kotlin version mirrors it.
 
-**A limit stated plainly:** Android lets other apps read notifications but not silence them before they alert. “Quiet” removes a notification immediately, but the original app's sound may already have played. For full silence, turn that app's notification sound off in Android settings and let Pulse decide what to surface.
+**A limit stated plainly:** Android lets other apps read notifications but not silence them before they alert. “Quiet” removes a notification immediately, but the original app's sound may already have played. For full silence, turn that app's notification sound off in Android settings and let Notivault decide what to surface.
 
 ## Privacy
 
-Notifications contain your messages, so they are treated accordingly: stored only in the app's private storage, excluded from Android backups, never uploaded, and optionally behind a biometric lock. The only network request Pulse makes is the update check against GitHub.
+Notifications contain your messages, so they are treated accordingly: stored only in the app's private storage, excluded from Android backups, never uploaded, and optionally behind a biometric lock. The only network request Notivault makes is the update check against GitHub.
 
 ## Setup
 
-Pulse needs **notification access**. On Android 13 and later, apps installed outside the Play Store are blocked from it until you open App info, tap ⋮ and choose **Allow restricted settings**. The app walks you through both steps.
+Notivault needs **notification access**. On Android 13 and later, apps installed outside the Play Store are blocked from it until you open App info, tap ⋮ and choose **Allow restricted settings**. The app walks you through both steps.
 
 ## Built with
 

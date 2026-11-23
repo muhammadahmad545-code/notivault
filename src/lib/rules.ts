@@ -12,9 +12,9 @@ export interface PulseRule {
 }
 
 export const ACTION_INFO: Record<RuleAction, { label: string; detail: string }> = {
-  mute: { label: 'Quiet', detail: 'Removed from the notification shade and kept in Pulse.' },
+  mute: { label: 'Quiet', detail: 'Removed from the notification shade and kept in Notivault.' },
   digest: { label: 'Hold for digest', detail: 'Removed from the shade and summarised at your digest times.' },
-  alert: { label: 'Priority alert', detail: 'Pulse repeats it as a high-priority alert, even when the app itself is quiet.' },
+  alert: { label: 'Priority alert', detail: 'Notivault repeats it as a high-priority alert, even when the app itself is quiet.' },
 };
 
 /** Mirrors Pulse.match in Kotlin: the first enabled rule whose apps and keywords both match. */

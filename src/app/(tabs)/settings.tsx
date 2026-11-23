@@ -76,7 +76,7 @@ export default function Settings() {
 
   return (
     <Screen aurora bottomSpace={TAB_BAR_SPACE}>
-      <Hero overline="Pulse" title="Settings" />
+      <Hero overline="Notivault" title="Settings" />
 
       <Card onPress={() => router.push('/rules')} variant="raised" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
         <ListFilter size={22} color={colors.accent} />
@@ -90,11 +90,11 @@ export default function Settings() {
 
       <SectionTitle title="Privacy" />
       <Card style={{ gap: spacing.xs }}>
-        {row('App lock', 'Fingerprint, face or your screen lock on open and after 30 seconds away. Also hides Pulse in the recent-apps view.', lock, async (on) => {
+        {row('App lock', 'Fingerprint, face or your screen lock on open and after 30 seconds away. Also hides Notivault in the recent-apps view.', lock, async (on) => {
           if (on && !(await canUseLock())) return toast('Set up a screen lock on this phone first.', 'danger');
           setLock(on);
         })}
-        {row('One-time code helper', 'Detects verification codes and offers a Copy button. On Android 15, the system may hide codes from apps like Pulse.', codes, (v) => apply(() => setCodes(v)))}
+        {row('One-time code helper', 'Detects verification codes and offers a Copy button. On Android 15, the system may hide codes from apps like Notivault.', codes, (v) => apply(() => setCodes(v)))}
         {row('Include ongoing notifications', 'Music players, navigation, downloads and other persistent notices.', ongoing, (v) => apply(() => setOngoing(v)))}
         <Text variant="label" color="textMuted" style={{ marginTop: spacing.sm }}>
           Keep history for

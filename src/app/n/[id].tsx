@@ -19,7 +19,7 @@ const REMOVED: Record<string, string> = {
   opened: 'You opened it',
   dismissed: 'You dismissed it',
   app: 'The app removed it (for example, a deleted message)',
-  pulse: 'Pulse removed it from the shade',
+  pulse: 'Notivault removed it from the shade',
   expired: 'It expired',
   other: 'It was removed',
 };
@@ -89,7 +89,7 @@ export default function Detail() {
   };
 
   const remind = async (at: number, label: string) => {
-    if (!(await requestNotifications())) return toast('Allow notifications for Pulse to get reminders.', 'danger');
+    if (!(await requestNotifications())) return toast('Allow notifications for Notivault to get reminders.', 'danger');
     try {
       await Listener.remindLater(item.id, at);
       setShowLater(false);
@@ -100,7 +100,7 @@ export default function Detail() {
   };
 
   const remove = () =>
-    Alert.alert('Delete this notification?', 'It is removed from Pulse only.', [
+    Alert.alert('Delete this notification?', 'It is removed from Notivault only.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

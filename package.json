@@ -1,6 +1,6 @@
 {
   "name": "pulse",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "expo-router/entry",
   "dependencies": {
     "@basalt/core": "github:muhammadahmad545-code/basalt-core#v0.5.2",

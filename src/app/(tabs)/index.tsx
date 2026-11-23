@@ -48,8 +48,8 @@ function SetupCard() {
   return (
     <Card variant="glow" style={{ gap: spacing.lg }}>
       <Text variant="heading">Finish setting up</Text>
-      {step(setup.listener, 'Notification access', 'Lets Pulse read notifications. If Android says “Restricted setting”, open App info, tap ⋮ and choose Allow restricted settings, then try again.', 'Open notification access', () => Listener.openListenerSettings())}
-      {step(setup.notifications, 'Pulse’s own notifications', 'Needed for code Copy buttons, priority alerts, digests and reminders.', 'Allow notifications', () => {
+      {step(setup.listener, 'Notification access', 'Lets Notivault read notifications. If Android says “Restricted setting”, open App info, tap ⋮ and choose Allow restricted settings, then try again.', 'Open notification access', () => Listener.openListenerSettings())}
+      {step(setup.notifications, 'Notivault’s own notifications', 'Needed for code Copy buttons, priority alerts, digests and reminders.', 'Allow notifications', () => {
         void requestNotifications().then(reload);
       })}
     </Card>
@@ -141,7 +141,7 @@ export default function Inbox() {
 
   const header = (
     <View style={{ paddingTop: insets.top + spacing.lg, paddingHorizontal: spacing.lg, gap: spacing.lg, paddingBottom: spacing.sm }}>
-      <Hero overline="Basalt" title="Pulse" right={<IconButton icon={ListFilter} label="Rules" onPress={() => router.push('/rules')} />}>
+      <Hero overline="Basalt" title="Notivault" right={<IconButton icon={ListFilter} label="Rules" onPress={() => router.push('/rules')} />}>
         {today ? (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <StatTile label="Today" value={String(today.total)} />

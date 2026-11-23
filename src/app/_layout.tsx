@@ -15,7 +15,7 @@ import { ACCENT, lockSetting, onboardedSetting, syncNative } from '../lib/settin
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const PAGES = [
-  { icon: BellRing, title: 'Every notification, kept', body: 'Pulse keeps a private history of what your phone showed you, including messages that were later edited or deleted.' },
+  { icon: BellRing, title: 'Every notification, kept', body: 'Notivault keeps a private history of what your phone showed you, including messages that were later edited or deleted.' },
   { icon: Search, title: 'Find anything', body: 'Search every notification by any word, filter by app, star the ones that matter, and get reminded about them later.' },
   { icon: Clock3, title: 'You decide what interrupts', body: 'Quiet noisy apps, hold others for a digest at times you choose, and escalate the messages that really matter.' },
   { icon: KeyRound, title: 'Codes, one tap', body: 'Verification codes are spotted automatically and offered with a Copy button. Everything stays on this phone.' },
@@ -24,7 +24,7 @@ const PAGES = [
 function Navigator() {
   const { colors, scheme } = useTheme();
   const [onboarded, setOnboarded] = onboardedSetting.use();
-  if (!onboarded) return <Onboarding appName="Pulse" pages={PAGES} onDone={() => setOnboarded(true)} />;
+  if (!onboarded) return <Onboarding appName="Notivault" pages={PAGES} onDone={() => setOnboarded(true)} />;
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
@@ -52,7 +52,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemeProvider accent={ACCENT}>
             <ToastProvider>
-              <LockGate setting={lockSetting} appName="Pulse" message="Your notification history stays hidden until you unlock.">
+              <LockGate setting={lockSetting} appName="Notivault" message="Your notification history stays hidden until you unlock.">
                 <Navigator />
               </LockGate>
             </ToastProvider>

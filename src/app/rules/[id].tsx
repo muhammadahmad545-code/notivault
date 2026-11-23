@@ -81,7 +81,7 @@ export default function RuleEditor() {
       />
       <Text variant="caption" color="textMuted">
         {ACTION_INFO[draft.action].detail}
-        {draft.action !== 'alert' ? ' Android may still play the app’s sound before Pulse removes it; turn that app’s sound off in its notification settings for full silence.' : ''}
+        {draft.action !== 'alert' ? ' Android may still play the app’s sound before Notivault removes it; turn that app’s sound off in its notification settings for full silence.' : ''}
       </Text>
 
       <SectionTitle title="Apps" />
@@ -94,7 +94,7 @@ export default function RuleEditor() {
         ))}
         {apps.length === 0 ? (
           <Text variant="caption" color="textFaint">
-            Apps appear here once Pulse has seen their notifications.
+            Apps appear here once Notivault has seen their notifications.
           </Text>
         ) : null}
       </View>
