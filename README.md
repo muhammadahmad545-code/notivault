@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.png" width="112" alt="Notivault logo: a vault door with a bell at its centre"></p>
+
 # Notivault
 
 *Renamed from **Pulse** in 1.2.2, so it is not confused with Clocked (formerly AppPulse), the suite's screen-time tracker.*
@@ -7,6 +9,13 @@ A private, searchable inbox for every notification on your Android phone, with r
 **[Download the latest APK](https://github.com/muhammadahmad545-code/notivault/releases/latest)**
 
 Pick the file ending in **`-arm64-v8a.apk`**: that is the right one for almost every phone from the last several years. `-armeabi-v7a.apk` is for older 32-bit phones and `-x86_64.apk` for emulators and Chromebooks. Installed apps update themselves to the matching file.
+
+## What's new in 1.3
+
+- **A real logo:** a vault door with a bell at its centre.
+- **Money:** spending and income read from your bank and wallet alerts (Meezan, HBL, JazzCash, Easypaisa, cards…). Totals per currency, the merchant or sender, this month / last month / 90 days, and CSV export. It is conservative: an alert needs an amount with a currency and a clear debited/spent/sent or credited/received word; promotions, bills that are only *due*, declined payments and one-time-code messages are ignored. No SMS permission and no bank login: it reads the notifications Notivault already keeps.
+- **Copy-code tile:** a Quick Settings tile that copies the newest one-time code from the last 15 minutes, marked sensitive so it stays out of clipboard previews.
+- **Export history as CSV** (last 30 days) through Android's share sheet. One-time codes are left out of the file.
 
 ## What's new in 1.2
 

@@ -1,5 +1,8 @@
 import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, SegmentedControl, TAB_BAR_SPACE, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
-import { canUseLock } from '@basalt/core/src/lock/LockGate';
+import { canUseLock, useLock } from '@basalt/core/src/lock/LockGate';
+import FileSpreadsheet from 'lucide-react-native/icons/file-spreadsheet';
+import KeyRound from 'lucide-react-native/icons/key-round';
+import Wallet from 'lucide-react-native/icons/wallet';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import Code from 'lucide-react-native/icons/code';
@@ -13,6 +16,7 @@ import X from 'lucide-react-native/icons/x';
 import React from 'react';
 import { Alert, Platform, View } from 'react-native';
 import { TimeField } from '../../components/TimeField';
+import { exportHistory } from '../../lib/exportCsv';
 import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, onboardedSetting, ongoingSetting, quietHoursSetting, retentionSetting, syncNative } from '../../lib/settings';
 import { inWindow } from '../../lib/quiet';
 import { clock } from '../../lib/time';
@@ -38,6 +42,15 @@ export default function Settings() {
   const [quiet, setQuiet] = quietHoursSetting.use();
   const nowMinute = new Date().getHours() * 60 + new Date().getMinutes();
   const updater = useUpdater({ source: UPDATE_SOURCE, auto: false });
+  const appLock = useLock();
+  const exportCsv = async (days: number) => {
+    try {
+      const count = await appLock.runExternal(() => exportHistory(days));
+      if (count === 0) toast('Nothing to export yet.', 'danger');
+    } catch (error) {
+      toast(toMessage(error, 'Could not export.'), 'danger');
+    }
+  };
 
   const apply = (change: () => void) => {
     change();
@@ -162,6 +175,17 @@ export default function Settings() {
           />
         ) : null}
         {Platform.OS === 'android' && Number(Platform.Version) < 33 ? <Button label="Allow exact timing" variant="ghost" onPress={() => Listener.openExactAlarmSettings()} /> : null}
+      </Card>
+
+      <SectionTitle title="Your data" />
+      <Card style={{ paddingVertical: spacing.xs }}>
+        <ListItem title="Money" subtitle="Spending and income read from bank and wallet alerts" icon={Wallet} chevron onPress={() => router.push('/money')} />
+        <ListItem title="Export last 30 days (CSV)" subtitle="Opens Android's share sheet. One-time codes are left out." icon={FileSpreadsheet} chevron onPress={() => void exportCsv(30)} />
+        <ListItem
+          title="Copy-code tile"
+          subtitle="Pull down the shade twice, tap the pencil and add “Copy code”. One tap copies the newest code from the last 15 minutes."
+          icon={KeyRound}
+        />
       </Card>
 
       <SectionTitle title="Appearance" />

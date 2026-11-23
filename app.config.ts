@@ -20,7 +20,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'dev.basalt.pulse',
     versionCode: versionCode(pkg.version),
     adaptiveIcon: {
-      backgroundColor: '#0B0D10',
+      backgroundColor: '#0C0D10',
+      backgroundImage: './assets/android-icon-background.png',
       foregroundImage: './assets/android-icon-foreground.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
@@ -41,7 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-sqlite',
     'expo-font',
-    ['expo-splash-screen', { backgroundColor: '#0B0D10', image: './assets/splash-icon.png', imageWidth: 160 }],
+    ['expo-splash-screen', { backgroundColor: '#0C0D10', image: './assets/splash-icon.png', imageWidth: 220 }],
     ['expo-local-authentication', { faceIDPermission: false }],
     // Compress native libraries inside the APK: a much smaller download.
     ['expo-build-properties', { android: { useLegacyPackaging: true } }],

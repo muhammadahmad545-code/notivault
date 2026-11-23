@@ -43,3 +43,32 @@ shot e2e-quieted
 # The app is called Notivault everywhere a user can see.
 tap_text "Settings"; sleep 3
 expect "Notivault" 10 "Settings uses the new name"
+
+# Money: bank and wallet alerts are read into spending and income.
+adb shell "cmd notification post -t 'Meezan Bank' bank1 'PKR 1,500.00 debited from your A/C **1234 on 23-Nov at DARAZ ONLINE.'" >/dev/null
+adb shell "cmd notification post -t 'Easypaisa' bank2 'You have received Rs 2,000 from Sara Khan in your Easypaisa account.'" >/dev/null
+sleep 6
+adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 3
+tap_text "Insights"; sleep 3
+scroll_top
+tap_text "Money"; sleep 5
+expect "Rs 1,500" 15 "money screen totals what was spent"
+expect "Rs 2,000" 5 "money screen totals what was received"
+expect "DARAZ ONLINE" 5 "the merchant is read from the alert"
+expect "Sara Khan" 5 "the sender is read from the alert"
+shot e2e-money
+tap_text "Export as CSV"; sleep 5
+if adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" | grep -qiE "chooser|resolver|intentresolver"; then pass "money CSV reached the share sheet"; else fail "money CSV reached the share sheet"; fi
+shot e2e-money-share
+adb shell input keyevent KEYCODE_BACK; sleep 2
+adb shell input keyevent KEYCODE_BACK; sleep 2
+
+# The Copy-code tile copies the newest code without opening the app.
+TILE=dev.basalt.pulse/expo.modules.pulselistener.CodeTileService
+adb shell "cmd notification post -t 'Bank' otp2 'Your verification code is 556677'" >/dev/null
+sleep 4
+adb shell cmd statusbar add-tile $TILE >/dev/null 2>&1
+adb logcat -c
+adb shell cmd statusbar click-tile $TILE >/dev/null 2>&1; sleep 3
+adb shell cmd statusbar collapse >/dev/null 2>&1
+if adb logcat -d | grep -q "FATAL EXCEPTION"; then fail "Copy-code tile runs without crashing"; else pass "Copy-code tile runs without crashing"; fi

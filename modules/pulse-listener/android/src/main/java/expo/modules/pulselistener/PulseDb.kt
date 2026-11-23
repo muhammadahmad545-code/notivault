@@ -197,6 +197,12 @@ class PulseDb private constructor(context: Context) : SQLiteOpenHelper(context, 
     return rows(readableDatabase.rawQuery(sql, args.toTypedArray()))
   }
 
+  /** The newest one-time code captured since `since`, with the app it came from. */
+  fun latestCode(since: Long): Pair<String, String>? = readableDatabase.rawQuery(
+    "SELECT code, app FROM notifications WHERE code IS NOT NULL AND posted_at >= ? ORDER BY posted_at DESC, id DESC LIMIT 1",
+    arrayOf(since.toString())
+  ).use { c -> if (c.moveToFirst()) c.getString(0) to (c.getString(1) ?: "") else null }
+
   /** The latest messages that share this notification's key (a chat thread, an edited message). */
   fun versions(key: String): List<Map<String, Any?>> =
     rows(readableDatabase.rawQuery("SELECT $columns FROM notifications n WHERE n.nkey = ? ORDER BY n.posted_at DESC, n.id DESC LIMIT 100", arrayOf(key))).reversed()

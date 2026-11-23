@@ -2,6 +2,7 @@ import { Appear, Bars, Card, EmptyState, Hero, Pressable, Ring, Screen, SectionT
 import { useFocusEffect, useRouter } from 'expo-router';
 import BarChart3 from 'lucide-react-native/icons/chart-column';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
+import Wallet from 'lucide-react-native/icons/wallet';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import type { Stats } from '../../../modules/pulse-listener';
@@ -38,6 +39,18 @@ export default function Insights() {
   return (
     <Screen aurora bottomSpace={TAB_BAR_SPACE}>
       <Hero overline="Notivault" title="Insights" subtitle="Who interrupts you, and when." />
+      <Card onPress={() => router.push('/money')} accessibilityLabel="Money. Spending and income from your bank and wallet alerts" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+          <Wallet size={20} color={colors.accent} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text variant="bodyStrong">Money</Text>
+          <Text variant="caption" color="textMuted">
+            Spending and income read from your bank and wallet alerts
+          </Text>
+        </View>
+        <ChevronRight size={18} color={colors.textFaint} />
+      </Card>
       <SegmentedControl options={RANGES} value={range} onChange={setRange} />
       {!stats ? <ActivityIndicator color={colors.accent} /> : null}
       {stats && stats.total === 0 ? <EmptyState icon={BarChart3} title="No data yet" message="Insights fill in as Notivault captures notifications." /> : null}
