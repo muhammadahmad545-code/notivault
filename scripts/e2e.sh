@@ -48,7 +48,9 @@ expect "Notivault" 10 "Settings uses the new name"
 adb shell "cmd notification post -t 'Meezan Bank' bank1 'PKR 1,500.00 debited from your A/C **1234 on 23-Nov at DARAZ ONLINE.'" >/dev/null
 adb shell "cmd notification post -t 'Easypaisa' bank2 'You have received Rs 2,000 from Sara Khan in your Easypaisa account.'" >/dev/null
 sleep 6
-adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 3
+# Start fresh so the tab bar is showing (earlier steps can leave a detail page open).
+adb shell am force-stop dev.basalt.pulse; sleep 1
+adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 6
 tap_text "Insights"; sleep 3
 scroll_top
 tap_text "Money"; sleep 5
