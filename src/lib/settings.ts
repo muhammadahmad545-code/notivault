@@ -11,7 +11,7 @@ export const lockSetting = createSetting<boolean>('pulse.lock', false);
 export const quietHoursSetting = createSetting<{ enabled: boolean; start: number; end: number }>('pulse.quietHours', { enabled: false, start: 22 * 60, end: 7 * 60 });
 export const onboardedSetting = createSetting<boolean>('pulse.onboarded', false);
 
-export const UPDATE_SOURCE = { owner: 'muhammadahmad545-code', repo: 'pulse' } as const;
+export const UPDATE_SOURCE = { owner: 'muhammadahmad545-code', repo: 'notivault' } as const;
 export const REPO_URL = `https://github.com/${UPDATE_SOURCE.owner}/${UPDATE_SOURCE.repo}`;
 export const ACCENT = { dark: '#FB923C', dark2: '#F97316', light: '#C2410C', light2: '#9A3412', onAccent: '#1F0D03' } as const;
 
