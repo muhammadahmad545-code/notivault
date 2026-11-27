@@ -10,6 +10,12 @@ A private, searchable inbox for every notification on your Android phone, with r
 
 Pick the file ending in **`-arm64-v8a.apk`**: that is the right one for almost every phone from the last several years. `-armeabi-v7a.apk` is for older 32-bit phones and `-x86_64.apk` for emulators and Chromebooks. Installed apps update themselves to the matching file.
 
+## What's new in 1.4
+
+- **Backup and restore for a new phone:** Settings → *Back up to a file* saves every notification, your rules and your settings into one file, through Android's own "Save to" screen (Downloads, Drive, a USB stick…). On the new phone, install Notivault and use *Restore from a backup*.
+- **Optional password:** the backup can be sealed with AES-256-GCM under a key derived from your password (PBKDF2-SHA256, 210,000 rounds). A wrong password or a damaged file is detected, never half-imported. Without a password the file is readable JSON.
+- **Safe to repeat:** restoring adds to what is already on the phone. Notifications already there are skipped, rules are merged, and history is never shortened by an import.
+
 ## What's new in 1.3
 
 - **A real logo:** a vault door with a bell at its centre.
@@ -64,7 +70,7 @@ DigestReceiver (exact alarm) ─▶ summary notification at digest times
 
 ## Privacy
 
-Notifications contain your messages, so they are treated accordingly: stored only in the app's private storage, excluded from Android backups, never uploaded, and optionally behind a biometric lock. The only network request Notivault makes is the update check against GitHub.
+Notifications contain your messages, so they are treated accordingly: stored only in the app's private storage, excluded from Android's automatic cloud backups, never uploaded (a backup file only leaves the phone if you save it somewhere yourself), and optionally behind a biometric lock. The only network request Notivault makes is the update check against GitHub.
 
 ## Setup
 

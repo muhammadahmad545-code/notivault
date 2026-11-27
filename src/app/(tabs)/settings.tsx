@@ -1,6 +1,8 @@
 import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, SegmentedControl, TAB_BAR_SPACE, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
 import { canUseLock, useLock } from '@basalt/core/src/lock/LockGate';
+import ArchiveRestore from 'lucide-react-native/icons/archive-restore';
 import FileSpreadsheet from 'lucide-react-native/icons/file-spreadsheet';
+import HardDriveDownload from 'lucide-react-native/icons/hard-drive-download';
 import KeyRound from 'lucide-react-native/icons/key-round';
 import Wallet from 'lucide-react-native/icons/wallet';
 import * as Linking from 'expo-linking';
@@ -15,7 +17,9 @@ import Trash2 from 'lucide-react-native/icons/trash';
 import X from 'lucide-react-native/icons/x';
 import React from 'react';
 import { Alert, Platform, View } from 'react-native';
+import { PasswordDialog } from '../../components/PasswordDialog';
 import { TimeField } from '../../components/TimeField';
+import { inspect, restore, saveBackup } from '../../lib/backup';
 import { exportHistory } from '../../lib/exportCsv';
 import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lockSetting, onboardedSetting, ongoingSetting, quietHoursSetting, retentionSetting, syncNative } from '../../lib/settings';
 import { inWindow } from '../../lib/quiet';
@@ -49,6 +53,91 @@ export default function Settings() {
       if (count === 0) toast('Nothing to export yet.', 'danger');
     } catch (error) {
       toast(toMessage(error, 'Could not export.'), 'danger');
+    }
+  };
+
+  const [busy, setBusy] = React.useState<'save' | 'restore' | null>(null);
+  const [dialog, setDialog] = React.useState<null | { mode: 'create' } | { mode: 'unlock'; uri: string; error: string | null }>(null);
+
+  const startBackup = () => setDialog({ mode: 'create' });
+
+  const finishBackup = async (password: string | null) => {
+    setDialog(null);
+    setBusy('save');
+    try {
+      const saved = await appLock.runExternal(() => saveBackup(password));
+      if (saved) {
+        const rules = saved.rules === 1 ? '1 rule' : `${saved.rules} rules`;
+        Alert.alert('Backup saved', `${saved.notifications.toLocaleString()} notifications, ${rules} and your settings are in the file. On a new phone, install Notivault and use Restore from a backup.`);
+      }
+    } catch (error) {
+      toast(toMessage(error, 'Could not save the backup.'), 'danger');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const confirmRestore = (uri: string, password: string | null, info: { exportedAt: number; count: number; settings: string; encrypted: boolean }) => {
+    const when = info.exportedAt > 0 ? new Date(info.exportedAt).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'an unknown date';
+    Alert.alert(
+      'Restore this backup?',
+      `Made ${when}, with ${info.count.toLocaleString()} notifications plus rules and settings.\n\nNotifications already on this phone are kept and duplicates are skipped. Rules are added to yours; digest times, quiet hours and the other settings are replaced by the backup’s.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          onPress: async () => {
+            setBusy('restore');
+            try {
+              const r = await restore(uri, password, info);
+              const parts = [`${r.added.toLocaleString()} notifications added`];
+              if (r.skipped > 0) parts.push(`${r.skipped.toLocaleString()} were already here`);
+              parts.push(r.rulesAdded === 1 ? '1 rule added' : `${r.rulesAdded} rules added`);
+              Alert.alert('Restore finished', `${parts.join(', ')}. Your settings now match the backup.`);
+              if (r.syncError) toast(r.syncError, 'danger');
+            } catch (error) {
+              toast(toMessage(error, 'Could not restore the backup.'), 'danger');
+            } finally {
+              setBusy(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const openBackup = async (uri: string, password: string | null) => {
+    const result = await inspect(uri, password);
+    if (result.ok) {
+      setDialog(null);
+      confirmRestore(uri, password, result.info);
+    } else {
+      setDialog({ mode: 'unlock', uri, error: result.reason === 'wrongPassword' ? 'That password is not right for this backup.' : null });
+    }
+  };
+
+  const startRestore = async () => {
+    setBusy('restore');
+    try {
+      const uri = await appLock.runExternal(() => Listener.pickBackupFile());
+      if (uri) await openBackup(uri, null);
+    } catch (error) {
+      toast(toMessage(error, 'Could not open that file.'), 'danger');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const unlockBackup = async (password: string | null) => {
+    if (dialog?.mode !== 'unlock') return;
+    setBusy('restore');
+    try {
+      await openBackup(dialog.uri, password);
+    } catch (error) {
+      setDialog(null);
+      toast(toMessage(error, 'Could not open that file.'), 'danger');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -180,6 +269,20 @@ export default function Settings() {
       <SectionTitle title="Your data" />
       <Card style={{ paddingVertical: spacing.xs }}>
         <ListItem title="Money" subtitle="Spending and income read from bank and wallet alerts" icon={Wallet} chevron onPress={() => router.push('/money')} />
+        <ListItem
+          title="Back up to a file"
+          subtitle={busy === 'save' ? 'Saving…' : 'All notifications, rules and settings, for a new phone or safekeeping. Save it to Downloads, Drive or anywhere.'}
+          icon={HardDriveDownload}
+          chevron
+          onPress={busy ? undefined : startBackup}
+        />
+        <ListItem
+          title="Restore from a backup"
+          subtitle={busy === 'restore' ? 'Restoring…' : 'Bring back notifications, rules and settings from a Notivault backup file'}
+          icon={ArchiveRestore}
+          chevron
+          onPress={busy ? undefined : () => void startRestore()}
+        />
         <ListItem title="Export last 30 days (CSV)" subtitle="Opens Android's share sheet. One-time codes are left out." icon={FileSpreadsheet} chevron onPress={() => void exportCsv(30)} />
         <ListItem
           title="Copy-code tile"
@@ -204,11 +307,19 @@ export default function Settings() {
       <UpdateCard updater={updater} />
 
       <Card style={{ paddingVertical: spacing.xs }}>
-        <ListItem title="Private by design" subtitle="Notifications are stored only on this phone, excluded from backups, and never uploaded. The only network request is the update check." icon={ShieldCheck} iconTone="success" />
+        <ListItem title="Private by design" subtitle="Notifications are stored only on this phone and never uploaded. Android's automatic cloud backup is off; only backup files you save yourself leave the phone. The only network request is the update check." icon={ShieldCheck} iconTone="success" />
         <ListItem title="Show the introduction again" icon={Sparkles} chevron onPress={() => onboardedSetting.set(false)} />
         <ListItem title="Source code" subtitle="MIT licensed on GitHub" icon={Code} chevron onPress={() => void Linking.openURL(REPO_URL)} />
       </Card>
       <Button label="Delete all history" icon={Trash2} variant="danger" onPress={wipe} />
+      <PasswordDialog
+        visible={dialog !== null}
+        mode={dialog?.mode ?? 'create'}
+        error={dialog?.mode === 'unlock' ? dialog.error : null}
+        busy={busy !== null}
+        onCancel={() => setDialog(null)}
+        onSubmit={(password) => void (dialog?.mode === 'unlock' ? unlockBackup(password) : finishBackup(password))}
+      />
     </Screen>
   );
 }

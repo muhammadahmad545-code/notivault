@@ -64,6 +64,22 @@ declare class PulseListenerModule extends NativeModule<Events> {
   setOptions(codes: boolean, includeOngoing: boolean, retentionDays: number): Promise<void>;
   sendDigestNow(): void;
   setQuietHours(enabled: boolean, start: number, end: number): void;
+  /** Android's "Save to" screen. Null when cancelled. */
+  pickBackupDestination(name: string): Promise<string | null>;
+  /** Android's file picker. Null when cancelled. */
+  pickBackupFile(): Promise<string | null>;
+  exportBackup(uri: string, settingsJson: string, appVersion: string, password: string | null): Promise<number>;
+  /** Rejects with code ERR_NEEDS_PASSWORD or ERR_WRONG_PASSWORD for protected backups. */
+  inspectBackup(uri: string, password: string | null): Promise<BackupInfo>;
+  importBackupNotifications(uri: string, password: string | null): Promise<{ added: number; skipped: number }>;
+}
+
+export interface BackupInfo {
+  exportedAt: number;
+  count: number;
+  encrypted: boolean;
+  /** JSON text of the backed-up settings. */
+  settings: string;
 }
 
 export default requireNativeModule<PulseListenerModule>('PulseListener');

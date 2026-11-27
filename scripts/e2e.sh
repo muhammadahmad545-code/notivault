@@ -74,3 +74,71 @@ adb logcat -c
 adb shell cmd statusbar click-tile $TILE >/dev/null 2>&1; sleep 3
 adb shell cmd statusbar collapse >/dev/null 2>&1
 if adb logcat -d | grep -q "FATAL EXCEPTION"; then fail "Copy-code tile runs without crashing"; else pass "Copy-code tile runs without crashing"; fi
+
+# Backup and restore: save a password-protected backup with Android's "Save to" screen, wipe the
+# history, then restore it from the file picker (wrong password first) and check it all came back.
+tap_alert() { tap_text "$1" || tap_text "$(echo "$1" | tr '[:lower:]' '[:upper:]')"; }
+adb shell "find /sdcard/Download -name 'notivault-backup-*' -delete" >/dev/null 2>&1
+adb shell am force-stop dev.basalt.pulse; sleep 1
+adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 6
+tap_text "Settings"; sleep 3
+scroll_to "Back up to a file" >/dev/null
+tap_text "Back up to a file"; sleep 2
+expect "Protect this backup?" 10 "backup asks about a password"
+tap_text "Password"; sleep 1; type_text "secret123"; sleep 1
+tap_text "Repeat password"; sleep 1; type_text "secret123"; sleep 1
+hide_keyboard() { adb shell dumpsys input_method | grep -q "mInputShown=true" && adb shell input keyevent KEYCODE_BACK; sleep 1; }
+hide_keyboard
+tap_text "Save with password"; sleep 5
+shot e2e-backup-save-screen
+tap_alert "Save"; sleep 2
+expect "are in the file" 15 "backup saved through Android's Save screen"
+tap_alert "OK"; sleep 1
+BACKUP=$(adb shell "find /sdcard/Download -name 'notivault-backup-*.json'" 2>/dev/null | tr -d '\r' | head -1)
+if [ -n "$BACKUP" ]; then pass "backup file written ($BACKUP)"; else fail "backup file written to Downloads"; fi
+if [ -n "$BACKUP" ] && adb shell cat "$BACKUP" | grep -q '"encrypted":true'; then pass "backup file is encrypted"; else fail "backup file is encrypted"; fi
+if [ -n "$BACKUP" ] && adb shell cat "$BACKUP" | grep -q "HBL Bank"; then fail "notification text is not readable in the encrypted file"; else pass "notification text is not readable in the encrypted file"; fi
+
+scroll_to "Delete all history" >/dev/null
+tap_text "Delete all history"; sleep 2
+tap_alert "Delete all"; sleep 4
+tap_text "Inbox"; sleep 4
+expect_not "HBL Bank" 3 "history wiped before the restore"
+
+tap_text "Settings"; sleep 3
+scroll_to "Restore from a backup" >/dev/null
+tap_text "Restore from a backup"; sleep 5
+shot e2e-restore-picker
+NAME=$(basename "${BACKUP:-notivault-backup.json}")
+if ! has_text "$NAME"; then tap_text "Downloads" || tap_text "Download"; sleep 3; fi
+tap_text "$NAME"; sleep 5
+expect "Backup password" 15 "a protected backup asks for its password"
+type_text "wrongpass"; sleep 1
+tap_text "Open backup"; sleep 8
+expect "That password is not right" 15 "a wrong password is refused"
+adb shell input keyevent KEYCODE_MOVE_END
+for i in $(seq 1 12); do adb shell input keyevent KEYCODE_DEL; done
+type_text "secret123"; sleep 1
+tap_text "Open backup"; sleep 8
+expect "Restore this backup?" 15 "the right password opens the backup"
+shot e2e-restore-confirm
+tap_alert "Restore"; sleep 2
+expect "Restore finished" 15 "restore reports what it brought back"
+shot e2e-restore-done
+tap_alert "OK"; sleep 1
+tap_text "Inbox"; sleep 4
+expect "HBL Bank" 15 "restored notifications are back in the inbox"
+expect "Lunch at 2 tomorrow" 10 "every restored notification is back"
+shot e2e-restored
+
+# Restoring the same file again adds nothing new.
+tap_text "Settings"; sleep 3
+scroll_to "Restore from a backup" >/dev/null
+tap_text "Restore from a backup"; sleep 5
+if ! has_text "$NAME"; then tap_text "Downloads" || tap_text "Download"; sleep 3; fi
+tap_text "$NAME"; sleep 5
+type_text "secret123"; sleep 1
+tap_text "Open backup"; sleep 8
+tap_alert "Restore"; sleep 2
+expect "0 notifications added" 15 "restoring the same backup twice adds no duplicates"
+tap_alert "OK"; sleep 1

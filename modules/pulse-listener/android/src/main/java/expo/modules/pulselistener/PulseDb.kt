@@ -140,6 +140,85 @@ class PulseDb private constructor(context: Context) : SQLiteOpenHelper(context, 
     writableDatabase.delete("notifications", "id = ?", arrayOf(id.toString()))
   }
 
+  /** Every stored notification, oldest first, in the backup file's shape. */
+  fun backupRows(): org.json.JSONArray {
+    val out = org.json.JSONArray()
+    readableDatabase.rawQuery(
+      "SELECT nkey, package, app, title, text, category, posted_at, removed_at, removed_by, state, rule_name, code, starred FROM notifications ORDER BY posted_at, id",
+      null
+    ).use { c ->
+      while (c.moveToNext()) {
+        out.put(org.json.JSONObject().apply {
+          put("key", c.getString(0))
+          put("package", c.getString(1))
+          put("app", c.getString(2))
+          put("title", c.getString(3))
+          put("text", c.getString(4))
+          if (!c.isNull(5)) put("category", c.getString(5))
+          put("postedAt", c.getLong(6))
+          if (!c.isNull(7)) put("removedAt", c.getLong(7))
+          if (!c.isNull(8)) put("removedBy", c.getString(8))
+          put("state", c.getString(9))
+          if (!c.isNull(10)) put("ruleName", c.getString(10))
+          if (!c.isNull(11)) put("code", c.getString(11))
+          if (c.getInt(12) == 1) put("starred", true)
+        })
+      }
+    }
+    return out
+  }
+
+  /**
+   * Adds backed-up notifications in one transaction. A row already on this phone (same key, time,
+   * title and text) is skipped, so importing the same backup twice adds nothing. Returns (added, skipped).
+   */
+  @Synchronized
+  fun importRows(items: org.json.JSONArray): Pair<Int, Int> {
+    val db = writableDatabase
+    var added = 0
+    var skipped = 0
+    db.beginTransaction()
+    try {
+      for (i in 0 until items.length()) {
+        val o = items.optJSONObject(i)
+        val key = o?.optString("key").orEmpty()
+        val pkg = o?.optString("package").orEmpty()
+        val postedAt = o?.optLong("postedAt", 0L) ?: 0L
+        if (o == null || key.isEmpty() || pkg.isEmpty() || postedAt <= 0) { skipped++; continue }
+        val title = o.optString("title")
+        val text = o.optString("text")
+        val exists = db.rawQuery(
+          "SELECT 1 FROM notifications WHERE nkey = ? AND posted_at = ? AND title = ? AND text = ? LIMIT 1",
+          arrayOf(key, postedAt.toString(), title, text)
+        ).use { it.moveToFirst() }
+        if (exists) { skipped++; continue }
+        val state = o.optString("state").takeIf { it == "shown" || it == "muted" || it == "digest" } ?: "shown"
+        val values = ContentValues().apply {
+          put("nkey", key)
+          put("package", pkg)
+          put("app", o.optString("app").ifEmpty { pkg })
+          put("title", title)
+          put("text", text)
+          put("category", o.optStringOrNull("category"))
+          put("posted_at", postedAt)
+          if (o.has("removedAt") && !o.isNull("removedAt")) put("removed_at", o.getLong("removedAt")) else put("removed_at", postedAt)
+          put("removed_by", o.optStringOrNull("removedBy") ?: "other")
+          put("state", state)
+          put("rule_name", o.optStringOrNull("ruleName"))
+          put("code", o.optStringOrNull("code"))
+          put("starred", if (o.optBoolean("starred", false)) 1 else 0)
+        }
+        if (db.insert("notifications", null, values) >= 0) added++ else skipped++
+      }
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+    return added to skipped
+  }
+
+  private fun org.json.JSONObject.optStringOrNull(name: String): String? = if (has(name) && !isNull(name)) optString(name) else null
+
   private fun rows(cursor: Cursor): List<Map<String, Any?>> = cursor.use { c ->
     val out = mutableListOf<Map<String, Any?>>()
     while (c.moveToNext()) {
