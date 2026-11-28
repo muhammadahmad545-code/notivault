@@ -142,3 +142,51 @@ tap_text "Open backup"; sleep 8
 tap_alert "Restore"; sleep 2
 expect "0 notifications added" 15 "restoring the same backup twice adds no duplicates"
 tap_alert "OK"; sleep 1
+
+# Appearance: change accent, font, background, depth and navigation; the screen previews the draft,
+# Apply uses it everywhere, and it is still there after the app restarts.
+reach_row() { scroll_to "$1" >/dev/null; adb shell input swipe 160 420 160 270 300; sleep 1; }
+selected_desc() { dump; python3 - "$1" <<'PY'
+import re, sys
+xml = open('/tmp/ui.xml', encoding='utf-8', errors='ignore').read()
+want = sys.argv[1]
+for m in re.finditer(r'<node [^>]*>', xml):
+    n = m.group(0)
+    if f'content-desc="{want}"' in n:
+        sys.exit(0 if 'selected="true"' in n or 'checked="true"' in n else 1)
+sys.exit(1)
+PY
+}
+adb shell am force-stop dev.basalt.pulse; sleep 1
+adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 6
+tap_text "Settings"; sleep 3
+reach_row "Appearance"
+tap_text "Appearance"; sleep 3
+expect "your way" 15 "Appearance screen opens with a live preview"
+shot e2e-appearance-default
+tap_text "Teal accent"; sleep 1
+reach_row "Manrope font"; tap_text "Manrope font"; sleep 2
+reach_row "Warm background"; tap_text "Warm background"; sleep 1
+reach_row "Glass"; tap_text "Glass"; sleep 1
+reach_row "Floating"; tap_text "Floating"; sleep 1
+shot e2e-appearance-draft
+expect "Apply" 5 "changes wait for Apply"
+tap_text "Apply"; sleep 2
+expect_not "Discard" 2 "Apply saves the draft"
+adb shell input keyevent KEYCODE_BACK; sleep 2
+tap_text "Inbox"; sleep 3
+shot e2e-appearance-applied-inbox
+adb shell am force-stop dev.basalt.pulse; sleep 1
+adb shell monkey -p dev.basalt.pulse -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 6
+tap_text "Settings"; sleep 3
+reach_row "Appearance"; tap_text "Appearance"; sleep 3
+if selected_desc "Teal accent"; then pass "accent choice survives a restart"; else fail "accent choice survives a restart"; fi
+reach_row "Manrope font"
+if selected_desc "Manrope font"; then pass "font choice survives a restart"; else fail "font choice survives a restart"; fi
+# Dark mode with the same choices, for the screenshots.
+scroll_top
+tap_text "Dark"; sleep 1; tap_text "Apply"; sleep 2
+shot e2e-appearance-dark
+reach_row "Reset to default"; tap_text "Reset to default"; sleep 1; tap_text "Apply"; sleep 2
+if selected_desc "Notivault accent"; then pass "Reset to default returns to the app colour"; else fail "Reset to default returns to the app colour"; fi
+adb shell input keyevent KEYCODE_BACK; sleep 1

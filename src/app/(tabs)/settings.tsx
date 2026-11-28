@@ -1,4 +1,4 @@
-import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, SegmentedControl, TAB_BAR_SPACE, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
+import { Button, Card, Chip, Hero, ListItem, Pressable, Screen, SectionTitle, TAB_BAR_SPACE, Text, Toggle, UpdateCard, themePreference, toMessage, useTheme, useToast, useUpdater } from '@basalt/core';
 import { canUseLock, useLock } from '@basalt/core/src/lock/LockGate';
 import ArchiveRestore from 'lucide-react-native/icons/archive-restore';
 import FileSpreadsheet from 'lucide-react-native/icons/file-spreadsheet';
@@ -8,6 +8,7 @@ import Wallet from 'lucide-react-native/icons/wallet';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import Code from 'lucide-react-native/icons/code';
+import Palette from 'lucide-react-native/icons/palette';
 import ListFilter from 'lucide-react-native/icons/list-filter';
 import Plus from 'lucide-react-native/icons/plus';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
@@ -25,11 +26,7 @@ import { Listener, REPO_URL, UPDATE_SOURCE, codesSetting, digestTimesSetting, lo
 import { inWindow } from '../../lib/quiet';
 import { clock } from '../../lib/time';
 
-const THEMES = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-] as const;
+const THEME_LABEL = { system: 'System', light: 'Light', dark: 'Dark' } as const;
 
 const RETENTION = [7, 30, 90, 365, 0];
 
@@ -37,7 +34,7 @@ export default function Settings() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const toast = useToast();
-  const [theme, setTheme] = themePreference.use();
+  const [theme] = themePreference.use();
   const [lock, setLock] = lockSetting.use();
   const [codes, setCodes] = codesSetting.use();
   const [ongoing, setOngoing] = ongoingSetting.use();
@@ -292,7 +289,9 @@ export default function Settings() {
       </Card>
 
       <SectionTitle title="Appearance" />
-      <SegmentedControl options={THEMES} value={theme} onChange={setTheme} />
+      <Card style={{ paddingVertical: spacing.xs }}>
+        <ListItem title="Appearance" subtitle={`${THEME_LABEL[theme]} theme · colour, font, text size, layout and motion`} icon={Palette} chevron onPress={() => router.push('/appearance')} />
+      </Card>
 
       <SectionTitle title="Updates" />
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
